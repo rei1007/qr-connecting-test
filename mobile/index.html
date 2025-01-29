@@ -40,7 +40,7 @@
         <div class="status-section">
             接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
             Auth: <strong id="auth-display"></strong> | 
-            Password: <strong>1234</strong> | 
+            Password: <strong id="password-display"></strong> | 
             User ID: <strong>Sender</strong>
         </div>
     </div>
@@ -56,8 +56,9 @@
 
     <script>
         // ランダム文字列生成関数
-        function generateRandomString(length) {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        function generateRandomString(length,type) {
+            console.log(type);
+            const characters = 'いろはにほへとちりぬるをわかよたれそつねならむういのおくやまけふこえてあさきゆめみしえひもせす';
             let result = '';
             for (let i = 0; i < length; i++) {
                 result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -68,10 +69,15 @@
         // 固定ユーザーID
         const id = 'Sender';
 
-        // ランダムに生成されたAuth
-        const auth = generateRandomString(10); // 長さ10のランダム文字列
+        // ランダムに生成されたAuthとPassword
+        const auth = generateRandomString(5,"auth"); // 長さ10のランダム文字列
+        const password = generateRandomString(12,"pass"); // 長さ12のランダム文字列
+
         console.log(`生成されたAuth: ${auth}`); // ログ：生成されたAuth
+        console.log(`生成されたPassword: ${password}`); // ログ：生成されたPassword
+
         document.getElementById('auth-display').innerText = auth;
+        document.getElementById('password-display').innerText = password;
 
         // WebSocket接続
         const ws = new WebSocket("wss://cloud.achex.ca/qct");
@@ -89,7 +95,7 @@
             document.getElementById('connection-status').innerText = "接続しました";
 
             // 認証情報を送信
-            const authData = JSON.stringify({ auth, password: "1234" });
+            const authData = JSON.stringify({ auth, password });
             console.log(`送信する認証情報: ${authData}`); // ログ：送信する認証情報
             ws.send(authData);
             

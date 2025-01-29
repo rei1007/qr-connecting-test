@@ -15,37 +15,61 @@
             padding: 10px;
             border-top: 1px solid #ccc;
         }
+        #auth-info {
+            margin-bottom: 20px;
+        }
+        #chat-log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h2>WebSocketでチャット</h2>
+    <h2>Achex WebSocket チャット</h2>
+
+    <!-- ランダム生成された認証情報を表示 -->
+    <div id="auth-info">
+        <p><strong>Auth:</strong> <span id="auth"></span></p>
+        <p><strong>Password:</strong> <span id="password"></span></p>
+    </div>
+
+    <!-- チャットログ -->
     <div id="chat-log"></div>
+
+    <!-- メッセージ入力 -->
     <input type="text" id="message-input" placeholder="メッセージを入力">
     <button onclick="sendMessage()">送信</button>
 
-    <!-- 接続状態を表示 -->
+    <!-- 接続状況 -->
     <div id="status">接続中...</div>
 
     <script>
-        // ユーザーID（ランダム生成）
-        const id = 'user_' + Math.floor(Math.random() * 10000);
+        // ランダム文字列生成関数
+        function generateRandomString(length) {
+            return Math.random().toString(36).substr(2, length);
+        }
+
+        // ランダムなauthとpasswordを生成
+        const auth = generateRandomString(8);
+        const password = generateRandomString(12);
+
+        // HTMLに表示
+        document.getElementById('auth').innerText = auth;
+        document.getElementById('password').innerText = password;
 
         // WebSocket接続
-        const ws = new WebSocket("wss://cloud.achex.ca/chat");
+        const ws = new WebSocket("wss://cloud.achex.ca/qct");
 
         // 接続時の処理
         ws.onopen = () => {
             console.log('WebSocket接続成功');
-            
-            // インスタンス名を表示（例として "Achex" を使用）
-            const instanceName = "Achex";
-            document.getElementById('status').innerText = `${instanceName}に接続しました`;
+            document.getElementById('status').innerText = "接続しました";
 
             // 認証情報を送信
-            ws.send(JSON.stringify({ auth: "hoge", password: "1234" }));
-            
-            // ログインメッセージ送信
-            ws.send(JSON.stringify({ to: "hoge", id: id, message: "Login" }));
+            ws.send(JSON.stringify({ auth, password }));
         };
 
         // メッセージ受信時の処理
@@ -53,13 +77,8 @@
             console.log('メッセージ受信:', event.data);
             const data = JSON.parse(event.data);
 
-            if (data.auth === 'OK') {
-                console.log('認証成功');
-                return;
-            }
-
             // チャットログに表示
-            addChat(data.id, data.message);
+            addChat(data.id || "サーバー", data.message || "メッセージなし");
         };
 
         // 切断時の処理
@@ -80,8 +99,9 @@
             const message = input.value;
 
             if (message.trim() !== '') {
-                ws.send(JSON.stringify({ to: "hoge", id: id, message }));
+                ws.send(JSON.stringify({ to: "qct", id: auth, message }));
                 input.value = ''; // 入力欄をクリア
+                addChat("自分", message); // 自分のメッセージも即時表示
             }
         }
 
@@ -89,6 +109,7 @@
         function addChat(senderId, message) {
             const chatLog = document.getElementById('chat-log');
             chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
+            chatLog.scrollTop = chatLog.scrollHeight; // 自動スクロール
         }
     </script>
 </body>

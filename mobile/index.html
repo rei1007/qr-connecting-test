@@ -1,106 +1,111 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スマホ WebSocket</title>
+    <title>Mobile Chat</title>
     <style>
-        #messages {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 200px;
-            overflow-y: scroll;
+        #chat {
+            width: 100%;
+            height: 300px;
+            border: solid 1px #FFFFFF;
+            overflow: auto;
         }
     </style>
 </head>
 <body>
-    <h1>WebSocket接続</h1>
-    <input type="text" id="instance" placeholder="インスタンス名">
-    <input type="text" id="auth" placeholder="認証">
-    <input type="password" id="password" placeholder="パスワード">
-    <button id="connect">接続</button>
-    <div id="messages"></div>
-    <textarea id="message" placeholder="ここにメッセージを入力"></textarea>
-    <button id="send">送信</button>
+    <h1>Mobile Chat</h1>
+    <div>
+        <label for="instance">インスタンス:</label>
+        <input type="text" id="instance" value="qct"><br>
+        <label for="auth">認証:</label>
+        <input type="text" id="auth" value="qctAuth"><br>
+        <label for="password">パスワード:</label>
+        <input type="password" id="password" value="qctPass"><br>
+        <button onclick="connect()">接続</button>
+    </div>
+    <input id="msg" type="text" style="width:80%;" value=""/> <button id="send" type="button" onclick="sendChat()">送信</button>
+    <div id="chat"></div>
+
     <script>
-        let socket;
-        const instanceInput = document.getElementById('instance');
-        const authInput = document.getElementById('auth');
-        const passwordInput = document.getElementById('password');
-        const connectButton = document.getElementById('connect');
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message');
-        const sendButton = document.getElementById('send');
+        var chat = document.getElementById("chat");
+        var ws;
+        var id;
+         
+        function connect() {
+            var instance = document.getElementById("instance").value;
+            var auth = document.getElementById("auth").value;
+            var password = document.getElementById("password").value;
 
-        connectButton.addEventListener('click', () => {
-            const instance = instanceInput.value.trim();
-            const auth = authInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            if(instance && auth && password){
-              connectToWebSocket(instance, auth, password)
-            } else {
-              alert("すべての情報を入力してください");
+            // ID生成
+            id = Math.random().toString(32).substring(2);
+            
+             // WS接続（Achexへ接続）
+            ws = new WebSocket("wss://cloud.achex.ca/chat");
+            // WS接続
+            ws.onopen = e => {
+                console.log('open');
+                chat.innerHTML = 'You ID : ' + id + '（' + getDateTime() + '）' + '<br>';
+                // 認証
+                ws.send(JSON.stringify({"auth": auth, "password": password, "instance": instance }));
+                // Login
+                ws.send(JSON.stringify({"to": instance, "id": id, "message": 'Login'}));
             }
-        });
-      
-        const connectToWebSocket = (instance, auth, password) => {
-          try {
-            const achexUrl = `wss://cloud.achex.ca/${instance}`;
-             socket = new WebSocket(achexUrl);
-              
-              socket.addEventListener('open', () => {
-              try{
-                socket.send(JSON.stringify({ auth: auth, password: password }));
-                console.log('Connected to Achex');
-                alert('接続成功！');
-               } catch(error){
-                 console.error("Error sending authentication info:", error);
-               }
-              });
 
-            socket.addEventListener('message', (event) => {
-                 try{
-                   const data = JSON.parse(event.data);
-                   if(data && data.msg){
-                      addMessage(data.msg, 'remote');
-                    }
-                 } catch(error){
-                  console.error("Error parsing message:", error);
-                 }
-              });
-           socket.addEventListener('error', (error) => {
-               console.error("WebSocket error:", error);
-                alert('WebSocket接続エラー');
-              });
-         } catch(error){
-            console.error("Error during WebSocket connection", error);
-             alert("WebSocket接続に失敗しました");
-          }
-        };
-      
-        const addMessage = (message, sender) => {
-             const messageDiv = document.createElement("div");
-             messageDiv.textContent = `(${sender}): ${message}`;
-             messagesDiv.appendChild(messageDiv);
-             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        };
-      
-        sendButton.addEventListener('click', () => {
-        const message = messageInput.value.trim();
-        if(message && socket && socket.readyState === WebSocket.OPEN){
-              try{
-                 socket.send(JSON.stringify({msg: message}));
-                console.log("Message sent:", message);
-                addMessage(message, 'local');
-                messageInput.value = "";
-              } catch(error){
-                  console.error("Error sending message:", error)
-              }
-           } else {
-              alert("メッセージを入力してください")
+            // メッセージ受信
+            ws.onmessage = e => {
+                console.log('message');
+                console.log(e);
+                var obj = JSON.parse(e.data);
+                 if(obj.auth == 'OK'){
+                    // 認証OK
+                    return;
+                }
+               addChat(obj.id, obj.message);
             }
-        });
+
+            // WS切断
+            ws.onclose = e => {
+                console.log('closed');
+                ws.send(JSON.stringify({"to": instance, "id": id, "message": 'Logout'}));
+            }
+
+             
+        }
+
+        // メッセージ送信
+        function sendChat(){
+          let msgElem = document.getElementById("msg");
+          let msg = msgElem.value;
+          msgElem.value = "";
+           var instance = document.getElementById("instance").value;
+          ws.send(JSON.stringify({"to": instance, "id": id, "message": msg}));
+        }
+
+
+        // チャット
+        function addChat(id, msg) {
+            chat.innerHTML = id + ' : ' + msg + '（' + getDateTime() + '）' + '<br>' + chat.innerHTML;
+        }
+
+
+         // 1桁の数字を0埋めで2桁にする
+        var toDoubleDigits = function(num) {
+            num += "";
+            if (num.length === 1) {
+                num = "0" + num;
+            }
+            return num;
+        };
+         // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
+        var getDateTime = function() {
+            var date = new Date();
+            var year = date.getFullYear();
+            var month = toDoubleDigits(date.getMonth() + 1);
+            var day = toDoubleDigits(date.getDate());
+            var hour = toDoubleDigits(date.getHours());
+            var min = toDoubleDigits(date.getMinutes());
+            var sec = toDoubleDigits(date.getSeconds());
+            return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
+        };
     </script>
 </body>
 </html>

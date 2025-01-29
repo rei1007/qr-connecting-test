@@ -82,6 +82,11 @@
                 // 認証情報を送信
                 ws.send(JSON.stringify({ auth, password }));
                 console.log(`認証情報送信: Auth=${auth}, Pass=${password}`);
+
+                // 接続成功後にid「Viewer」でSuccessを送信
+                const successMessage = JSON.stringify({ to: auth, id: "Viewer", message: "Success" });
+                console.log(`送信するメッセージ: ${successMessage}`);
+                ws.send(successMessage);
             };
 
             // メッセージ受信時の処理

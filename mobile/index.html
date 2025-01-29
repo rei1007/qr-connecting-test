@@ -15,7 +15,7 @@
 </head>
 <body>
     <h1>WebSocket接続</h1>
-  <input type="text" id="instance" placeholder="インスタンス名">
+    <input type="text" id="instance" placeholder="インスタンス名">
     <input type="text" id="auth" placeholder="認証">
     <input type="password" id="password" placeholder="パスワード">
     <button id="connect">接続</button>
@@ -42,52 +42,65 @@
             } else {
               alert("すべての情報を入力してください");
             }
-        })
+        });
       
         const connectToWebSocket = (instance, auth, password) => {
-          try{
+          try {
             const achexUrl = `wss://cloud.achex.ca/${instance}`;
              socket = new WebSocket(achexUrl);
-
-             socket.addEventListener('open', () => {
-              socket.send(JSON.stringify({ auth: auth, password: password }));
-              console.log('Connected to Achex');
-              alert('接続成功！');
+              
+              socket.addEventListener('open', () => {
+              try{
+                socket.send(JSON.stringify({ auth: auth, password: password }));
+                console.log('Connected to Achex');
+                alert('接続成功！');
+               } catch(error){
+                 console.error("Error sending authentication info:", error);
+               }
               });
 
             socket.addEventListener('message', (event) => {
-                 const data = JSON.parse(event.data);
-                if(data.msg){
-                    addMessage(data.msg, 'remote');
-                }
+                 try{
+                   const data = JSON.parse(event.data);
+                   if(data && data.msg){
+                      addMessage(data.msg, 'remote');
+                    }
+                 } catch(error){
+                  console.error("Error parsing message:", error);
+                 }
               });
-            socket.addEventListener('error', (error) => {
-                console.error("WebSocket error:", error)
-                alert('WebSocket接続エラー')
-              })
-          } catch(error){
-             console.error("WebSocket error", error)
-             alert("WebSocket接続に失敗しました")
+           socket.addEventListener('error', (error) => {
+               console.error("WebSocket error:", error);
+                alert('WebSocket接続エラー');
+              });
+         } catch(error){
+            console.error("Error during WebSocket connection", error);
+             alert("WebSocket接続に失敗しました");
           }
-        }
+        };
       
         const addMessage = (message, sender) => {
              const messageDiv = document.createElement("div");
              messageDiv.textContent = `(${sender}): ${message}`;
              messagesDiv.appendChild(messageDiv);
              messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+        };
       
-      sendButton.addEventListener('click', () => {
+        sendButton.addEventListener('click', () => {
         const message = messageInput.value.trim();
-          if(message && socket && socket.readyState === WebSocket.OPEN){
-              socket.send(JSON.stringify({msg: message}));
-              addMessage(message, 'local');
-              messageInput.value = "";
-          } else {
-             alert("メッセージを入力してください")
-           }
-      });
+        if(message && socket && socket.readyState === WebSocket.OPEN){
+              try{
+                 socket.send(JSON.stringify({msg: message}));
+                console.log("Message sent:", message);
+                addMessage(message, 'local');
+                messageInput.value = "";
+              } catch(error){
+                  console.error("Error sending message:", error)
+              }
+           } else {
+              alert("メッセージを入力してください")
+            }
+        });
     </script>
 </body>
 </html>

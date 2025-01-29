@@ -60,50 +60,62 @@
 
         // ランダムに生成されたAuth
         const auth = generateRandomString(10); // 長さ10のランダム文字列
+        console.log(`生成されたAuth: ${auth}`); // ログ：生成されたAuth
         document.getElementById('auth-display').innerText = auth;
 
         // WebSocket接続
         const ws = new WebSocket("wss://cloud.achex.ca/qct");
+        console.log("WebSocketインスタンス作成"); // ログ：WebSocketインスタンス作成
 
         // 接続時の処理
         ws.onopen = () => {
-            console.log('WebSocket接続成功');
+            console.log('WebSocket接続成功'); // ログ：接続成功
             
             // 接続状況を更新
             document.getElementById('connection-status').innerText = "接続しました";
 
             // 認証情報を送信
-            ws.send(JSON.stringify({ auth, password: "1234" }));
+            const authData = JSON.stringify({ auth, password: "1234" });
+            console.log(`送信する認証情報: ${authData}`); // ログ：送信する認証情報
+            ws.send(authData);
             
             // ログインメッセージ送信
-            ws.send(JSON.stringify({ to: "hoge", id: id, message: "Login" }));
+            const loginMessage = JSON.stringify({ to: "hoge", id: id, message: "Login" });
+            console.log(`送信するログインメッセージ: ${loginMessage}`); // ログ：送信するログインメッセージ
+            ws.send(loginMessage);
         };
 
         // メッセージ受信時の処理
         ws.onmessage = (event) => {
-            console.log('メッセージ受信:', event.data);
-            const data = JSON.parse(event.data);
+            console.log('メッセージ受信:', event.data); // ログ：受信したメッセージ
+            try {
+                const data = JSON.parse(event.data);
 
-            if (data.auth === 'OK') {
-                console.log('認証成功');
-                return;
-            }
+                if (data.auth === 'OK') {
+                    console.log('認証成功'); // ログ：認証成功
+                    return;
+                }
 
-            // サーバーからのメッセージのみ表示
-            if (data.id && data.message) {
-                addChat(data.id, data.message);
+                // サーバーからのメッセージのみ表示
+                if (data.id && data.message) {
+                    addChat(data.id, data.message);
+                } else {
+                    console.warn("無効なデータ形式:", event.data); // 警告：無効なデータ形式
+                }
+            } catch (e) {
+                console.error("受信データの解析エラー:", e, event.data); // エラー：JSON解析エラー
             }
         };
 
         // 切断時の処理
         ws.onclose = () => {
-            console.log('WebSocket切断');
+            console.log('WebSocket切断'); // ログ：切断
             document.getElementById('connection-status').innerText = "接続が切断されました";
         };
 
         // エラー時の処理
         ws.onerror = (error) => {
-            console.error('WebSocketエラー:', error);
+            console.error('WebSocketエラー:', error); // エラー：WebSocketエラー
             document.getElementById('connection-status').innerText = "エラーが発生しました";
         };
 
@@ -113,7 +125,9 @@
             const message = input.value;
 
             if (message.trim() !== '') {
-                ws.send(JSON.stringify({ to: "hoge", id: id, message }));
+                const messageData = JSON.stringify({ to: "hoge", id: id, message });
+                console.log(`送信するメッセージ: ${messageData}`); // ログ：送信するメッセージ
+                ws.send(messageData);
                 input.value = ''; // 入力欄をクリア
                 // 自分のメッセージはチャットログに表示しない（サーバーからの応答のみ表示）
             }

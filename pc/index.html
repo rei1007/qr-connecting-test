@@ -3,93 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Achex WebSocket Sender</title>
+    <title>Achex WebSocket Viewer</title>
     <style>
         #status {
-            position: fixed;
-            bottom: 0;
+            position: relative;
+            top: 0;
             left: 0;
             width: 100%;
-            background-color: #f0f0f0;
-            text-align: center;
+            background-color: #f9f9f9;
+            text-align: left;
             padding: 10px;
-            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
         }
         #chat-log {
             max-height: 300px;
             overflow-y: auto;
             border: 1px solid #ccc;
             padding: 10px;
-            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+        #auth-form {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h2>Achex WebSocket 送信サイト</h2>
+    <!-- 接続情報 -->
+    <div id="status">
+        接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
+        状態: <span id="connection-status">未接続</span>
+    </div>
 
-    <!-- 認証情報 -->
-    <div id="auth-info">
-        <p><strong>Auth:</strong> fixedAuth</p>
-        <p><strong>Password:</strong> fixedPassword</p>
+    <h2>Achex WebSocket Viewer</h2>
+
+    <!-- AuthとPassの入力フォーム -->
+    <div id="auth-form">
+        <label for="auth-input">Auth:</label>
+        <input type="text" id="auth-input" placeholder="Authを入力">
+        <label for="pass-input">Pass:</label>
+        <input type="text" id="pass-input" placeholder="Passを入力">
+        <button onclick="connectWebSocket()">接続</button>
     </div>
 
     <!-- チャットログ -->
     <div id="chat-log"></div>
 
-    <!-- メッセージ入力 -->
-    <input type="text" id="message-input" placeholder="メッセージを入力">
-    <button onclick="sendMessage()">送信</button>
-
-    <!-- 接続状況 -->
-    <div id="status">接続中...</div>
-
     <script>
-        const auth = "fixedAuth"; // 固定された認証情報
-        const password = "fixedPassword";
+        let ws; // WebSocketインスタンス
 
-        // WebSocket接続
-        const ws = new WebSocket("wss://cloud.achex.ca/qct");
+        // WebSocket接続関数
+        function connectWebSocket() {
+            const auth = document.getElementById('auth-input').value.trim();
+            const password = document.getElementById('pass-input').value.trim();
 
-        // 接続時の処理
-        ws.onopen = () => {
-            console.log('WebSocket接続成功');
-            document.getElementById('status').innerText = "接続しました";
-
-            // 認証情報を送信
-            ws.send(JSON.stringify({ auth, password }));
-        };
-
-        // メッセージ受信時の処理
-        ws.onmessage = (event) => {
-            console.log('メッセージ受信:', event.data);
-            const data = JSON.parse(event.data);
-
-            // チャットログに表示
-            addChat(data.id || "サーバー", data.message || "メッセージなし");
-        };
-
-        // 切断時の処理
-        ws.onclose = () => {
-            console.log('WebSocket切断');
-            document.getElementById('status').innerText = "接続が切断されました";
-        };
-
-        // エラー時の処理
-        ws.onerror = (error) => {
-            console.error('WebSocketエラー:', error);
-            document.getElementById('status').innerText = "エラーが発生しました";
-        };
-
-        // メッセージ送信関数
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const message = input.value;
-
-            if (message.trim() !== '') {
-                ws.send(JSON.stringify({ to: "qct", id: auth, message }));
-                input.value = ''; // 入力欄をクリア
-                addChat("自分", message); // 自分のメッセージも即時表示
+            if (!auth || !password) {
+                alert("AuthとPassを入力してください。");
+                return;
             }
+
+            // WebSocket接続
+            ws = new WebSocket("wss://cloud.achex.ca/qct");
+
+            // 接続時の処理
+            ws.onopen = () => {
+                console.log('WebSocket接続成功');
+                document.getElementById('connection-status').innerText = "接続しました";
+
+                // 認証情報を送信
+                ws.send(JSON.stringify({ auth, password }));
+                console.log(`認証情報送信: Auth=${auth}, Pass=${password}`);
+            };
+
+            // メッセージ受信時の処理
+            ws.onmessage = (event) => {
+                console.log('メッセージ受信:', event.data);
+                const data = JSON.parse(event.data);
+
+                // サーバーからのメッセージのみ表示
+                if (data.id && data.message) {
+                    addChat(data.id, data.message);
+                } else {
+                    console.error("無効なデータ形式:", event.data);
+                }
+            };
+
+            // 切断時の処理
+            ws.onclose = () => {
+                console.log('WebSocket切断');
+                document.getElementById('connection-status').innerText = "接続が切断されました";
+                ws = null; // WebSocketインスタンスをリセット
+            };
+
+            // エラー時の処理
+            ws.onerror = (error) => {
+                console.error('WebSocketエラー:', error);
+                document.getElementById('connection-status').innerText = "エラーが発生しました";
+            };
         }
 
         // チャットログにメッセージを追加する関数

@@ -23,16 +23,26 @@
             padding: 10px;
             margin-bottom: 20px;
         }
+        .status-section {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <!-- 接続情報 -->
     <div id="status">
-        接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
-        Auth: <strong id="auth-display"></strong> | 
-        Password: <strong>1234</strong> | 
-        User ID: <strong>Sender</strong> | 
-        状態: <span id="connection-status">接続中...</span>
+        <div class="status-section">
+            <strong>状態:</strong> 
+            <span id="connection-status">接続中...</span> |
+            Sender状態: <span id="sender-status">未受信</span> |
+            Viewer状態: <span id="viewer-status">未受信</span>
+        </div>
+        <div class="status-section">
+            接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
+            Auth: <strong id="auth-display"></strong> | 
+            Password: <strong>1234</strong> | 
+            User ID: <strong>Sender</strong>
+        </div>
     </div>
 
     <h2>WebSocketでチャット</h2>
@@ -67,6 +77,10 @@
         const ws = new WebSocket("wss://cloud.achex.ca/qct");
         console.log("WebSocketインスタンス作成"); // ログ：WebSocketインスタンス作成
 
+        // 状態追跡用フラグ
+        let senderSuccessReceived = false;
+        let viewerSuccessReceived = false;
+
         // 接続時の処理
         ws.onopen = () => {
             console.log('WebSocket接続成功'); // ログ：接続成功
@@ -99,6 +113,18 @@
                 // サーバーからのメッセージのみ表示
                 if (data.id && data.message) {
                     addChat(data.id, data.message);
+
+                    // SenderまたはViewerのSuccess状態を更新
+                    if (data.id === "Sender" && data.message === "Success") {
+                        senderSuccessReceived = true;
+                        document.getElementById('sender-status').innerText = "受信済み";
+                        console.log("SenderのSuccessを受信しました");
+                    }
+                    if (data.id === "Viewer" && data.message === "Success") {
+                        viewerSuccessReceived = true;
+                        document.getElementById('viewer-status').innerText = "受信済み";
+                        console.log("ViewerのSuccessを受信しました");
+                    }
                 } else {
                     console.warn("無効なデータ形式:", event.data); // 警告：無効なデータ形式
                 }

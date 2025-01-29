@@ -80,7 +80,7 @@
             ws.send(authData);
             
             // ログインメッセージ送信
-            const loginMessage = JSON.stringify({ to: auth, id, message: "Login" });
+            const loginMessage = JSON.stringify({ to: auth, id, message: "Success" });
             console.log(`送信するログインメッセージ: ${loginMessage}`); // ログ：送信するログインメッセージ
             ws.send(loginMessage);
         };

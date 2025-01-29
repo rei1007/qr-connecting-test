@@ -1,111 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>Mobile Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achex WebSocket Receiver</title>
     <style>
-        #chat {
+        #status {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             width: 100%;
-            height: 300px;
-            border: solid 1px #FFFFFF;
-            overflow: auto;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        #chat-log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        #auth-form {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Mobile Chat</h1>
-    <div>
-        <label for="instance">インスタンス:</label>
-        <input type="text" id="instance" value="qct"><br>
-        <label for="auth">認証:</label>
-        <input type="text" id="auth" value="qctAuth"><br>
-        <label for="password">パスワード:</label>
-        <input type="password" id="password" value="qctPass"><br>
-        <button onclick="connect()">接続</button>
+    <h2>Achex WebSocket 表示専用サイト</h2>
+
+    <!-- 認証情報入力フォーム -->
+    <div id="auth-form">
+        <label for="auth-input">Auth:</label>
+        <input type="text" id="auth-input" placeholder="Authを入力">
+        <label for="password-input">Password:</label>
+        <input type="text" id="password-input" placeholder="Passwordを入力">
+        <button onclick="connectWebSocket()">接続</button>
     </div>
-    <input id="msg" type="text" style="width:80%;" value=""/> <button id="send" type="button" onclick="sendChat()">送信</button>
-    <div id="chat"></div>
+
+    <!-- チャットログ -->
+    <div id="chat-log"></div>
+
+    <!-- 接続状況 -->
+    <div id="status">未接続</div>
 
     <script>
-        var chat = document.getElementById("chat");
-        var ws;
-        var id;
-        var instance; // グローバルスコープでinstanceを定義
+        let ws; // WebSocketインスタンス
 
-        function connect() {
-            instance = document.getElementById("instance").value; // グローバル変数に値を格納
-            var auth = document.getElementById("auth").value;
-            var password = document.getElementById("password").value;
+        // WebSocket接続関数
+        function connectWebSocket() {
+            const auth = document.getElementById('auth-input').value.trim();
+            const password = document.getElementById('password-input').value.trim();
 
-            // ID生成
-            id = Math.random().toString(32).substring(2);
-            
-             // WS接続（Achexへ接続）
-            ws = new WebSocket("wss://cloud.achex.ca/chat");
-            // WS接続
-            ws.onopen = e => {
-                console.log('open');
-                chat.innerHTML = 'You ID : ' + id + '（' + getDateTime() + '）' + '<br>';
-                // 認証
-                ws.send(JSON.stringify({"auth": auth, "password": password, "instance": instance }));
-                // Login
-                ws.send(JSON.stringify({"to": instance, "id": id, "message": 'Login'}));
+            if (!auth || !password) {
+                alert("AuthとPasswordを入力してください。");
+                return;
             }
 
-            // メッセージ受信
-            ws.onmessage = e => {
-                console.log('message');
-                console.log(e);
-                var obj = JSON.parse(e.data);
-                 if(obj.auth == 'OK'){
-                    // 認証OK
-                    return;
-                }
-               addChat(obj.id, obj.message);
-            }
+            // WebSocket接続
+            ws = new WebSocket("wss://cloud.achex.ca/qct");
 
-            // WS切断
-            ws.onclose = e => {
-                console.log('closed');
-                ws.send(JSON.stringify({"to": instance, "id": id, "message": 'Logout'}));
-            }
+            // 接続時の処理
+            ws.onopen = () => {
+                console.log('WebSocket接続成功');
+                document.getElementById('status').innerText = "接続しました";
 
-             
+                // 認証情報を送信
+                ws.send(JSON.stringify({ auth, password }));
+            };
+
+            // メッセージ受信時の処理
+            ws.onmessage = (event) => {
+                console.log('メッセージ受信:', event.data);
+                const data = JSON.parse(event.data);
+
+                // チャットログに表示
+                addChat(data.id || "サーバー", data.message || "メッセージなし");
+            };
+
+            // 切断時の処理
+            ws.onclose = () => {
+                console.log('WebSocket切断');
+                document.getElementById('status').innerText = "接続が切断されました";
+                ws = null; // WebSocketインスタンスをリセット
+            };
+
+            // エラー時の処理
+            ws.onerror = (error) => {
+                console.error('WebSocketエラー:', error);
+                document.getElementById('status').innerText = "エラーが発生しました";
+            };
         }
 
-        // メッセージ送信
-        function sendChat(){
-          let msgElem = document.getElementById("msg");
-          let msg = msgElem.value;
-          msgElem.value = "";
-          ws.send(JSON.stringify({"to": instance, "id": id, "message": msg}));
+        // チャットログにメッセージを追加する関数
+        function addChat(senderId, message) {
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
+            chatLog.scrollTop = chatLog.scrollHeight; // 自動スクロール
         }
-
-
-        // チャット
-        function addChat(id, msg) {
-            chat.innerHTML = id + ' : ' + msg + '（' + getDateTime() + '）' + '<br>' + chat.innerHTML;
-        }
-
-
-         // 1桁の数字を0埋めで2桁にする
-        var toDoubleDigits = function(num) {
-            num += "";
-            if (num.length === 1) {
-                num = "0" + num;
-            }
-            return num;
-        };
-         // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
-        var getDateTime = function() {
-            var date = new Date();
-            var year = date.getFullYear();
-            var month = toDoubleDigits(date.getMonth() + 1);
-            var day = toDoubleDigits(date.getDate());
-            var hour = toDoubleDigits(date.getHours());
-            var min = toDoubleDigits(date.getMinutes());
-            var sec = toDoubleDigits(date.getSeconds());
-            return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
-        };
     </script>
 </body>
 </html>

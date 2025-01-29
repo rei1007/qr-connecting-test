@@ -1,44 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PC WebSocket</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC WebSocket</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/qrcode.min.js"></script>
+    <style>
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+        }
+    </style>
 </head>
 <body>
-  <h1>QRコードをスキャンしてください</h1>
-  <div id="qrcode"></div>
+    <h1>QRコードをスキャンしてください</h1>
+    <div id="qrcode"></div>
+    <div id="messages"></div>
+    <script>
+      const qrcodeDiv = document.getElementById('qrcode');
+      const messagesDiv = document.getElementById('messages');
+      
+      const achexUrl = "wss://cloud.achex.ca/qr_connecting_test"; // ここをあなたのAchexインスタンス名に
+      const authInfo = {
+        auth: "testAuth",// ここをあなたのAchexのユーザー名に
+        password: "testPass"// ここをあなたのAchexのパスワードに
+        };
+      
+        const connectionInfo = JSON.stringify({ url: achexUrl, ...authInfo });
 
-  <script>
-    const achexUrl = "wss://cloud.achex.ca/your_instance_name";
-    const authInfo = {
-      auth: "your_username",
-      password: "your_password"
-    };
-
-    // WebSocket接続情報をQRコード化
-    const connectionInfo = JSON.stringify({ url: achexUrl, ...authInfo });
-    QRCode.toCanvas(document.getElementById('qrcode'), connectionInfo, (error) => {
-      if (error) console.error(error);
-      console.log('QR Code generated!');
-    });
-
-    // WebSocketサーバーに接続
-    const socket = new WebSocket(achexUrl);
-    socket.addEventListener('open', () => {
-      socket.send(JSON.stringify(authInfo));
-      console.log('Connected to Achex');
-    });
-
-    // メッセージ受信時
-    socket.addEventListener('message', (event) => {
-      const data = JSON.parse(event.data);
-      if (data.msg) {
-        console.log("Received:", data.msg);
-        alert("スマホからのメッセージ: " + data.msg);
+      const generateQrCode = () => {
+          try{
+            new QRCode(qrcodeDiv, {
+              text: connectionInfo,
+              width: 256,
+              height: 256,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+              correctLevel : QRCode.CorrectLevel.H
+            });
+          }catch(error){
+              console.error("Failed to generate QR code:", error);
+          }
       }
-    });
-  </script>
+      
+        const connectToWebSocket = () => {
+           const socket = new WebSocket(achexUrl);
+            socket.addEventListener('open', () => {
+                socket.send(JSON.stringify(authInfo));
+                console.log('Connected to Achex');
+            });
+
+            socket.addEventListener('message', (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                if (data.msg) {
+                  addMessage(data.msg, 'remote')
+                }
+              } catch (error) {
+                console.error("JSON parse error:", error);
+              }
+            });
+            
+            socket.addEventListener('error', (error) => {
+                console.error("WebSocket error", error)
+            })
+        }
+        
+      const addMessage = (message, sender) => {
+            const messageDiv = document.createElement("div");
+            messageDiv.textContent = `(${sender}): ${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+      generateQrCode();
+      connectToWebSocket();
+    </script>
 </body>
 </html>

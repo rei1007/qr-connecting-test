@@ -29,9 +29,10 @@
         var chat = document.getElementById("chat");
         var ws;
         var id;
-         
+        var instance; // グローバルスコープでinstanceを定義
+
         function connect() {
-            var instance = document.getElementById("instance").value;
+            instance = document.getElementById("instance").value; // グローバル変数に値を格納
             var auth = document.getElementById("auth").value;
             var password = document.getElementById("password").value;
 
@@ -76,7 +77,6 @@
           let msgElem = document.getElementById("msg");
           let msg = msgElem.value;
           msgElem.value = "";
-           var instance = document.getElementById("instance").value;
           ws.send(JSON.stringify({"to": instance, "id": id, "message": msg}));
         }
 

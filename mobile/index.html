@@ -22,21 +22,15 @@
             padding: 10px;
             margin-bottom: 20px;
         }
-        #auth-form {
-            margin-bottom: 20px;
-        }
     </style>
 </head>
 <body>
     <h2>Achex WebSocket 表示専用サイト</h2>
 
-    <!-- 認証情報入力フォーム -->
-    <div id="auth-form">
-        <label for="auth-input">Auth:</label>
-        <input type="text" id="auth-input" placeholder="Authを入力">
-        <label for="password-input">Password:</label>
-        <input type="text" id="password-input" placeholder="Passwordを入力">
-        <button onclick="connectWebSocket()">接続</button>
+    <!-- 認証情報 -->
+    <div id="auth-info">
+        <p><strong>Auth:</strong> fixedAuth</p>
+        <p><strong>Password:</strong> fixedPassword</p>
     </div>
 
     <!-- チャットログ -->
@@ -46,52 +40,44 @@
     <div id="status">未接続</div>
 
     <script>
-        let ws; // WebSocketインスタンス
+        const auth = "fixedAuth"; // 固定された認証情報
+        const password = "fixedPassword";
 
-        // WebSocket接続関数
-        function connectWebSocket() {
-            const auth = document.getElementById('auth-input').value.trim();
-            const password = document.getElementById('password-input').value.trim();
+        // WebSocket接続
+        const ws = new WebSocket("wss://cloud.achex.ca/qct");
 
-            if (!auth || !password) {
-                alert("AuthとPasswordを入力してください。");
-                return;
+        // 接続時の処理
+        ws.onopen = () => {
+            console.log('WebSocket接続成功');
+            document.getElementById('status').innerText = "接続しました";
+
+            // 認証情報を送信
+            ws.send(JSON.stringify({ auth, password }));
+        };
+
+        // メッセージ受信時の処理
+        ws.onmessage = (event) => {
+            console.log('メッセージ受信:', event.data);
+            const data = JSON.parse(event.data);
+
+            if (data.message) {
+                addChat(data.id || "サーバー", data.message);
+            } else {
+                console.error("無効なデータ形式:", event.data);
             }
+        };
 
-            // WebSocket接続
-            ws = new WebSocket("wss://cloud.achex.ca/qct");
+        // 切断時の処理
+        ws.onclose = () => {
+            console.log('WebSocket切断');
+            document.getElementById('status').innerText = "接続が切断されました";
+        };
 
-            // 接続時の処理
-            ws.onopen = () => {
-                console.log('WebSocket接続成功');
-                document.getElementById('status').innerText = "接続しました";
-
-                // 認証情報を送信
-                ws.send(JSON.stringify({ auth, password }));
-            };
-
-            // メッセージ受信時の処理
-            ws.onmessage = (event) => {
-                console.log('メッセージ受信:', event.data);
-                const data = JSON.parse(event.data);
-
-                // チャットログに表示
-                addChat(data.id || "サーバー", data.message || "メッセージなし");
-            };
-
-            // 切断時の処理
-            ws.onclose = () => {
-                console.log('WebSocket切断');
-                document.getElementById('status').innerText = "接続が切断されました";
-                ws = null; // WebSocketインスタンスをリセット
-            };
-
-            // エラー時の処理
-            ws.onerror = (error) => {
-                console.error('WebSocketエラー:', error);
-                document.getElementById('status').innerText = "エラーが発生しました";
-            };
-        }
+        // エラー時の処理
+        ws.onerror = (error) => {
+            console.error('WebSocketエラー:', error);
+            document.getElementById('status').innerText = "エラーが発生しました";
+        };
 
         // チャットログにメッセージを追加する関数
         function addChat(senderId, message) {

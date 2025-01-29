@@ -58,11 +58,11 @@
         // ランダム文字列生成関数
         function generateRandomString(length,type) {
             console.log(type);
-            const characters = '';
+            let characters = '';
             if (type === "auth") {
-                characters = "いろはにほへとちりぬるをわかよたれそつねならむういのおくやまけふこえてあさきゆめみしえひもせす"
+                characters = "いろはにほへとちりぬるをわかよたれそつねならむういのおくやまけふこえてあさきゆめみしえひもせす";
             } else if (type === "pass") {
-                characters = "0123456789"
+                characters = "0123456789";
             }
             let result = '';
             for (let i = 0; i < length; i++) {

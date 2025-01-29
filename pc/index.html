@@ -1,78 +1,86 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PC WebSocket</title>
+    <title>PC Chat</title>
     <style>
-        #connection-info {
-            margin: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        #messages {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 200px;
-            overflow-y: scroll;
+        #chat {
+            width: 100%;
+            height: 300px;
+            border: solid 1px #FFFFFF;
+            overflow: auto;
         }
     </style>
 </head>
 <body>
-    <h1>接続情報を入力してください</h1>
-    <div id="connection-info">
-        <p><strong>インスタンス名:</strong> <span id="instance">qct</span></p>
-        <p><strong>認証:</strong> <span id="auth">qctAuth</span></p>
-        <p><strong>パスワード:</strong> <span id="password">qctPass</span></p>
+    <h1>PC Chat</h1>
+    <div id="info">
+        <p>インスタンス: qct</p>
+        <p>認証: qctAuth</p>
+        <p>パスワード: qctPass</p>
     </div>
-    <div id="messages"></div>
+    <div id="chat"></div>
+
     <script>
-      const messagesDiv = document.getElementById('messages');
+        var chat = document.getElementById("chat");
+        // ID生成
+        var id = Math.random().toString(32).substring(2);
 
-      const achexUrl = "wss://cloud.achex.ca/qct"; // インスタンス名を使用
-      const authInfo = {
-        auth: "qctAuth",
-        password: "qctPass"
-      };
+        // WS接続（Achexへ接続）
+        ws = new WebSocket("wss://cloud.achex.ca/chat");
 
-      const connectToWebSocket = () => {
-          try{
-             const socket = new WebSocket(achexUrl);
-            socket.addEventListener('open', () => {
-              try {
-                socket.send(JSON.stringify(authInfo));
-                console.log('Connected to Achex');
-                } catch(error) {
-                    console.error("Error sending authentication:", error)
-                }
-            });
+        // WS接続
+        ws.onopen = e => {
+            console.log('open');
+            chat.innerHTML = 'You ID : ' + id + '（' + getDateTime() + '）' + '<br>';
+            // 認証
+            ws.send(JSON.stringify({"auth": "qctAuth", "password": "qctPass", "instance": "qct"}));
+            // Login
+            ws.send(JSON.stringify({"to": "qct", "id": id, "message": 'Login'}));
+        }
 
-            socket.addEventListener('message', (event) => {
-              try {
-                const data = JSON.parse(event.data);
-                if (data && data.msg) {
-                  addMessage(data.msg, 'remote')
-                }
-              } catch (error) {
-                console.error("JSON parse error:", error);
-              }
-            });
+        // メッセージ受信
+        ws.onmessage = e => {
+            console.log('message');
+            console.log(e);
+            var obj = JSON.parse(e.data);
+             if(obj.auth == 'OK'){
+                // 認証OK
+                return;
+            }
+            addChat(obj.id, obj.message);
+        }
 
-             socket.addEventListener('error', (error) => {
-                console.error("WebSocket error", error);
-             });
-         } catch (error) {
-             console.error("Error during WebSocket connection", error)
-          }
-       };
+        // WS切断
+        ws.onclose = e => {
+            console.log('closed');
+            ws.send(JSON.stringify({"to": "qct", "id": id, "message": 'Logout'}));
+        }
 
-      const addMessage = (message, sender) => {
-            const messageDiv = document.createElement("div");
-            messageDiv.textContent = `(${sender}): ${message}`;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+         // チャット
+        function addChat(id, msg) {
+            chat.innerHTML = id + ' : ' + msg + '（' + getDateTime() + '）' + '<br>' + chat.innerHTML;
+        }
+
+        // 1桁の数字を0埋めで2桁にする
+        var toDoubleDigits = function(num) {
+            num += "";
+            if (num.length === 1) {
+                num = "0" + num;
+            }
+            return num;
         };
-        connectToWebSocket();
+
+        // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
+        var getDateTime = function() {
+            var date = new Date();
+            var year = date.getFullYear();
+            var month = toDoubleDigits(date.getMonth() + 1);
+            var day = toDoubleDigits(date.getDate());
+            var hour = toDoubleDigits(date.getHours());
+            var min = toDoubleDigits(date.getMinutes());
+            var sec = toDoubleDigits(date.getSeconds());
+            return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
+        };
     </script>
 </body>
 </html>

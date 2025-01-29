@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スマホ WebSocket</title>
+  <script type="module">
+    import { BrowserQRCodeReader } from '@zxing/browser';
+  </script>
+</head>
+<body>
+  <h1>QRコードをスキャンして接続</h1>
+  <input type="file" id="input" accept="image/*">
+  <textarea id="message" placeholder="ここにメッセージを入力"></textarea>
+  <button id="send">送信</button>
+
+  <script type="module">
+    import { BrowserQRCodeReader } from '@zxing/browser';
+
+    const codeReader = new BrowserQRCodeReader();
+    let socket;
+
+    // QRコード読み取り
+    document.querySelector('#input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const result = await codeReader.decodeFromImage(file);
+      const connectionInfo = JSON.parse(result.text);
+
+      // WebSocket接続
+      socket = new WebSocket(connectionInfo.url);
+      socket.addEventListener('open', () => {
+        socket.send(JSON.stringify({ auth: connectionInfo.auth, password: connectionInfo.password }));
+        console.log('Connected to Achex');
+        alert("接続成功！");
+      });
+    });
+
+    // メッセージ送信
+    document.querySelector('#send').addEventListener('click', () => {
+      const message = document.querySelector('#message').value;
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ msg: message }));
+        console.log("Message sent:", message);
+      } else {
+        alert("WebSocketが接続されていません。");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Achex WebSocket Example</title>
+    <title>Achex WebSocket Sender</title>
     <style>
         #status {
             position: fixed;
@@ -15,9 +15,6 @@
             padding: 10px;
             border-top: 1px solid #ccc;
         }
-        #auth-info {
-            margin-bottom: 20px;
-        }
         #chat-log {
             max-height: 300px;
             overflow-y: auto;
@@ -28,12 +25,12 @@
     </style>
 </head>
 <body>
-    <h2>Achex WebSocket チャット</h2>
+    <h2>Achex WebSocket 送信サイト</h2>
 
-    <!-- ランダム生成された認証情報を表示 -->
+    <!-- 認証情報 -->
     <div id="auth-info">
-        <p><strong>Auth:</strong> <span id="auth"></span></p>
-        <p><strong>Password:</strong> <span id="password"></span></p>
+        <p><strong>Auth:</strong> fixedAuth</p>
+        <p><strong>Password:</strong> fixedPassword</p>
     </div>
 
     <!-- チャットログ -->
@@ -47,18 +44,8 @@
     <div id="status">接続中...</div>
 
     <script>
-        // ランダム文字列生成関数
-        function generateRandomString(length) {
-            return Math.random().toString(36).substr(2, length);
-        }
-
-        // ランダムなauthとpasswordを生成
-        const auth = generateRandomString(8);
-        const password = generateRandomString(12);
-
-        // HTMLに表示
-        document.getElementById('auth').innerText = auth;
-        document.getElementById('password').innerText = password;
+        const auth = "fixedAuth"; // 固定された認証情報
+        const password = "fixedPassword";
 
         // WebSocket接続
         const ws = new WebSocket("wss://cloud.achex.ca/qct");

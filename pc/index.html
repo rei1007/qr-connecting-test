@@ -36,16 +36,21 @@
       };
 
       const connectToWebSocket = () => {
-           const socket = new WebSocket(achexUrl);
+          try{
+             const socket = new WebSocket(achexUrl);
             socket.addEventListener('open', () => {
-              socket.send(JSON.stringify(authInfo));
-              console.log('Connected to Achex');
+              try {
+                socket.send(JSON.stringify(authInfo));
+                console.log('Connected to Achex');
+                } catch(error) {
+                    console.error("Error sending authentication:", error)
+                }
             });
 
             socket.addEventListener('message', (event) => {
               try {
                 const data = JSON.parse(event.data);
-                if (data.msg) {
+                if (data && data.msg) {
                   addMessage(data.msg, 'remote')
                 }
               } catch (error) {
@@ -55,14 +60,17 @@
 
              socket.addEventListener('error', (error) => {
                 console.error("WebSocket error", error);
-             })
-        };
+             });
+         } catch (error) {
+             console.error("Error during WebSocket connection", error)
+          }
+       };
 
       const addMessage = (message, sender) => {
             const messageDiv = document.createElement("div");
             messageDiv.textContent = `(${sender}): ${message}`;
             messagesDiv.appendChild(messageDiv);
-             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         };
         connectToWebSocket();
     </script>

@@ -3,41 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Achexでのメッセージ送信</title>
+    <title>Achex WebSocket Example</title>
 </head>
 <body>
-    <h2>メッセージ送信と表示</h2>
-    <div id="log">受信メッセージ:</div>
-    <input type="text" id="msg" placeholder="メッセージを入力">
+    <h2>WebSocketでチャット</h2>
+    <div id="chat-log"></div>
+    <input type="text" id="message-input" placeholder="メッセージを入力">
     <button onclick="sendMessage()">送信</button>
 
     <script>
-        // WebSocketサーバーに接続
-        const socket = new WebSocket('wss://cloud.achex.ca/hogefuga'); // 'hogefuga' を任意の文字列に変更
+        // ユーザーID（ランダム生成）
+        const id = 'user_' + Math.floor(Math.random() * 10000);
+
+        // WebSocket接続
+        const ws = new WebSocket("wss://cloud.achex.ca/chat");
 
         // 接続時の処理
-        socket.addEventListener('open', function (event) {
-            console.log('Connected to WebSocket');
-            socket.send(JSON.stringify({ auth: "sender", password: "pass" })); // 認証情報を送信
-        });
+        ws.onopen = () => {
+            console.log('WebSocket接続成功');
+            document.getElementById('chat-log').innerHTML += `<p>接続しました (ID: ${id})</p>`;
+            
+            // 認証情報を送信
+            ws.send(JSON.stringify({ auth: "hoge", password: "1234" }));
+            
+            // ログインメッセージ送信
+            ws.send(JSON.stringify({ to: "hoge", id: id, message: "Login" }));
+        };
 
         // メッセージ受信時の処理
-        socket.addEventListener('message', function (event) {
-            const logDiv = document.getElementById('log');
+        ws.onmessage = (event) => {
+            console.log('メッセージ受信:', event.data);
             const data = JSON.parse(event.data);
-            if (data.msg) {
-                logDiv.innerHTML += `<p>${data.msg}</p>`;
+
+            if (data.auth === 'OK') {
+                console.log('認証成功');
+                return;
             }
-        });
+
+            // チャットログに表示
+            addChat(data.id, data.message);
+        };
+
+        // 切断時の処理
+        ws.onclose = () => {
+            console.log('WebSocket切断');
+            document.getElementById('chat-log').innerHTML += `<p>接続が切断されました</p>`;
+        };
+
+        // エラー時の処理
+        ws.onerror = (error) => {
+            console.error('WebSocketエラー:', error);
+        };
 
         // メッセージ送信関数
         function sendMessage() {
-            const msgInput = document.getElementById('msg');
-            const message = msgInput.value;
-            if (message) {
-                socket.send(JSON.stringify({ to: "receiver", msg: message })); // メッセージを送信
-                msgInput.value = ""; // 入力欄をクリア
+            const input = document.getElementById('message-input');
+            const message = input.value;
+
+            if (message.trim() !== '') {
+                ws.send(JSON.stringify({ to: "hoge", id: id, message }));
+                input.value = ''; // 入力欄をクリア
             }
+        }
+
+        // チャットログにメッセージを追加する関数
+        function addChat(senderId, message) {
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
         }
     </script>
 </body>

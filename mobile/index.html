@@ -58,7 +58,12 @@
         // ランダム文字列生成関数
         function generateRandomString(length,type) {
             console.log(type);
-            const characters = 'いろはにほへとちりぬるをわかよたれそつねならむういのおくやまけふこえてあさきゆめみしえひもせす';
+            const characters = '';
+            if (type === "auth") {
+                characters = "いろはにほへとちりぬるをわかよたれそつねならむういのおくやまけふこえてあさきゆめみしえひもせす"
+            } else if (type === "pass") {
+                characters = "0123456789"
+            }
             let result = '';
             for (let i = 0; i < length; i++) {
                 result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -70,8 +75,8 @@
         const id = 'Sender';
 
         // ランダムに生成されたAuthとPassword
-        const auth = generateRandomString(5,"auth"); // 長さ10のランダム文字列
-        const password = generateRandomString(12,"pass"); // 長さ12のランダム文字列
+        const auth = generateRandomString(5,"auth"); // 長さ5のランダム文字列
+        const password = generateRandomString(12,"pass"); // 長さ5のランダム文字列
 
         console.log(`生成されたAuth: ${auth}`); // ログ：生成されたAuth
         console.log(`生成されたPassword: ${password}`); // ログ：生成されたPassword

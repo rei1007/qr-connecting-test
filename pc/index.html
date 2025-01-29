@@ -1,86 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>PC Chat</title>
-    <style>
-        #chat {
-            width: 100%;
-            height: 300px;
-            border: solid 1px #FFFFFF;
-            overflow: auto;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achexでのメッセージ送信</title>
 </head>
 <body>
-    <h1>PC Chat</h1>
-    <div id="info">
-        <p>インスタンス: qct</p>
-        <p>認証: qctAuth</p>
-        <p>パスワード: qctPass</p>
-    </div>
-    <div id="chat"></div>
+    <h2>メッセージ送信と表示</h2>
+    <div id="log">受信メッセージ:</div>
+    <input type="text" id="msg" placeholder="メッセージを入力">
+    <button onclick="sendMessage()">送信</button>
 
     <script>
-        var chat = document.getElementById("chat");
-        // ID生成
-        var id = Math.random().toString(32).substring(2);
+        // WebSocketサーバーに接続
+        const socket = new WebSocket('wss://cloud.achex.ca/hogefuga'); // 'hogefuga' を任意の文字列に変更
 
-        // WS接続（Achexへ接続）
-        ws = new WebSocket("wss://cloud.achex.ca/chat");
+        // 接続時の処理
+        socket.addEventListener('open', function (event) {
+            console.log('Connected to WebSocket');
+            socket.send(JSON.stringify({ auth: "sender", password: "pass" })); // 認証情報を送信
+        });
 
-        // WS接続
-        ws.onopen = e => {
-            console.log('open');
-            chat.innerHTML = 'You ID : ' + id + '（' + getDateTime() + '）' + '<br>';
-            // 認証
-            ws.send(JSON.stringify({"auth": "qctAuth", "password": "qctPass", "instance": "qct"}));
-            // Login
-            ws.send(JSON.stringify({"to": "qct", "id": id, "message": 'Login'}));
-        }
-
-        // メッセージ受信
-        ws.onmessage = e => {
-            console.log('message');
-            console.log(e);
-            var obj = JSON.parse(e.data);
-             if(obj.auth == 'OK'){
-                // 認証OK
-                return;
+        // メッセージ受信時の処理
+        socket.addEventListener('message', function (event) {
+            const logDiv = document.getElementById('log');
+            const data = JSON.parse(event.data);
+            if (data.msg) {
+                logDiv.innerHTML += `<p>${data.msg}</p>`;
             }
-            addChat(obj.id, obj.message);
-        }
+        });
 
-        // WS切断
-        ws.onclose = e => {
-            console.log('closed');
-            ws.send(JSON.stringify({"to": "qct", "id": id, "message": 'Logout'}));
-        }
-
-         // チャット
-        function addChat(id, msg) {
-            chat.innerHTML = id + ' : ' + msg + '（' + getDateTime() + '）' + '<br>' + chat.innerHTML;
-        }
-
-        // 1桁の数字を0埋めで2桁にする
-        var toDoubleDigits = function(num) {
-            num += "";
-            if (num.length === 1) {
-                num = "0" + num;
+        // メッセージ送信関数
+        function sendMessage() {
+            const msgInput = document.getElementById('msg');
+            const message = msgInput.value;
+            if (message) {
+                socket.send(JSON.stringify({ to: "receiver", msg: message })); // メッセージを送信
+                msgInput.value = ""; // 入力欄をクリア
             }
-            return num;
-        };
-
-        // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
-        var getDateTime = function() {
-            var date = new Date();
-            var year = date.getFullYear();
-            var month = toDoubleDigits(date.getMonth() + 1);
-            var day = toDoubleDigits(date.getDate());
-            var hour = toDoubleDigits(date.getHours());
-            var min = toDoubleDigits(date.getMinutes());
-            var sec = toDoubleDigits(date.getSeconds());
-            return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
-        };
+        }
     </script>
 </body>
 </html>

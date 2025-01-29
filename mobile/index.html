@@ -64,6 +64,7 @@
             } else if (type === "pass") {
                 characters = "0123456789";
             }
+            return characters;
             let result = '';
             for (let i = 0; i < length; i++) {
                 result += characters.charAt(Math.floor(Math.random() * characters.length));

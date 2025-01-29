@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Achex WebSocket Receiver</title>
+    <title>Achex WebSocket Example</title>
     <style>
         #status {
-            position: fixed;
-            bottom: 0;
+            position: relative;
+            top: 0;
             left: 0;
             width: 100%;
             background-color: #f0f0f0;
             text-align: center;
             padding: 10px;
-            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
         }
         #chat-log {
             max-height: 300px;
@@ -25,23 +25,27 @@
     </style>
 </head>
 <body>
-    <h2>Achex WebSocket 表示専用サイト</h2>
-
-    <!-- 認証情報 -->
-    <div id="auth-info">
-        <p><strong>Auth:</strong> fixedAuth</p>
-        <p><strong>Password:</strong> fixedPassword</p>
+    <!-- 接続状態を表示 -->
+    <div id="status">
+        <p id="connection-status">接続中...</p>
+        <p><strong>接続先:</strong> wss://cloud.achex.ca/<span id="instance-name">qct</span></p>
+        <p><strong>Auth:</strong> hoge</p>
+        <p><strong>Password:</strong> 1234</p>
+        <p><strong>User ID:</strong> Sender</p>
     </div>
+
+    <h2>WebSocketでチャット</h2>
 
     <!-- チャットログ -->
     <div id="chat-log"></div>
 
-    <!-- 接続状況 -->
-    <div id="status">未接続</div>
+    <!-- メッセージ入力 -->
+    <input type="text" id="message-input" placeholder="メッセージを入力">
+    <button onclick="sendMessage()">送信</button>
 
     <script>
-        const auth = "fixedAuth"; // 固定された認証情報
-        const password = "fixedPassword";
+        // 固定ユーザーID
+        const id = 'Sender';
 
         // WebSocket接続
         const ws = new WebSocket("wss://cloud.achex.ca/qct");
@@ -49,10 +53,16 @@
         // 接続時の処理
         ws.onopen = () => {
             console.log('WebSocket接続成功');
-            document.getElementById('status').innerText = "接続しました";
+            
+            // 接続状況を更新
+            const instanceName = "qct"; // 接続先のインスタンス名
+            document.getElementById('connection-status').innerText = `Achex (${instanceName}) に接続しました`;
 
             // 認証情報を送信
-            ws.send(JSON.stringify({ auth, password }));
+            ws.send(JSON.stringify({ auth: "hoge", password: "1234" }));
+            
+            // ログインメッセージ送信
+            ws.send(JSON.stringify({ to: "hoge", id: id, message: "Login" }));
         };
 
         // メッセージ受信時の処理
@@ -60,24 +70,38 @@
             console.log('メッセージ受信:', event.data);
             const data = JSON.parse(event.data);
 
-            if (data.message) {
-                addChat(data.id || "サーバー", data.message);
-            } else {
-                console.error("無効なデータ形式:", event.data);
+            if (data.auth === 'OK') {
+                console.log('認証成功');
+                return;
             }
+
+            // チャットログに表示
+            addChat(data.id, data.message);
         };
 
         // 切断時の処理
         ws.onclose = () => {
             console.log('WebSocket切断');
-            document.getElementById('status').innerText = "接続が切断されました";
+            document.getElementById('connection-status').innerText = "接続が切断されました";
         };
 
         // エラー時の処理
         ws.onerror = (error) => {
             console.error('WebSocketエラー:', error);
-            document.getElementById('status').innerText = "エラーが発生しました";
+            document.getElementById('connection-status').innerText = "エラーが発生しました";
         };
+
+        // メッセージ送信関数
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value;
+
+            if (message.trim() !== '') {
+                ws.send(JSON.stringify({ to: "hoge", id: id, message }));
+                input.value = ''; // 入力欄をクリア
+                addChat("自分", message); // 自分のメッセージも即時表示
+            }
+        }
 
         // チャットログにメッセージを追加する関数
         function addChat(senderId, message) {

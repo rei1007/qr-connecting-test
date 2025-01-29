@@ -4,12 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Achex WebSocket Example</title>
+    <style>
+        #status {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body>
     <h2>WebSocketでチャット</h2>
     <div id="chat-log"></div>
     <input type="text" id="message-input" placeholder="メッセージを入力">
     <button onclick="sendMessage()">送信</button>
+
+    <!-- 接続状態を表示 -->
+    <div id="status">接続中...</div>
 
     <script>
         // ユーザーID（ランダム生成）
@@ -21,8 +36,11 @@
         // 接続時の処理
         ws.onopen = () => {
             console.log('WebSocket接続成功');
-            document.getElementById('chat-log').innerHTML += `<p>接続しました (ID: ${id})</p>`;
             
+            // インスタンス名を表示（例として "Achex" を使用）
+            const instanceName = "Achex";
+            document.getElementById('status').innerText = `${instanceName}に接続しました`;
+
             // 認証情報を送信
             ws.send(JSON.stringify({ auth: "hoge", password: "1234" }));
             
@@ -47,12 +65,13 @@
         // 切断時の処理
         ws.onclose = () => {
             console.log('WebSocket切断');
-            document.getElementById('chat-log').innerHTML += `<p>接続が切断されました</p>`;
+            document.getElementById('status').innerText = "接続が切断されました";
         };
 
         // エラー時の処理
         ws.onerror = (error) => {
             console.error('WebSocketエラー:', error);
+            document.getElementById('status').innerText = "エラーが発生しました";
         };
 
         // メッセージ送信関数

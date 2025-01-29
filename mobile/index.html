@@ -80,7 +80,7 @@
             ws.send(authData);
             
             // ログインメッセージ送信
-            const loginMessage = JSON.stringify({ to: "hoge", id: id, message: "Login" });
+            const loginMessage = JSON.stringify({ to: auth, id, message: "Login" });
             console.log(`送信するログインメッセージ: ${loginMessage}`); // ログ：送信するログインメッセージ
             ws.send(loginMessage);
         };
@@ -125,7 +125,7 @@
             const message = input.value;
 
             if (message.trim() !== '') {
-                const messageData = JSON.stringify({ to: "hoge", id: id, message });
+                const messageData = JSON.stringify({ to: auth, id, message });
                 console.log(`送信するメッセージ: ${messageData}`); // ログ：送信するメッセージ
                 ws.send(messageData);
                 input.value = ''; // 入力欄をクリア

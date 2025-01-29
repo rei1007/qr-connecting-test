@@ -29,7 +29,7 @@
     <!-- 接続情報 -->
     <div id="status">
         接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
-        Auth: <strong>hoge</strong> | 
+        Auth: <strong id="auth-display"></strong> | 
         Password: <strong>1234</strong> | 
         User ID: <strong>Sender</strong> | 
         状態: <span id="connection-status">接続中...</span>
@@ -45,8 +45,22 @@
     <button onclick="sendMessage()">送信</button>
 
     <script>
+        // ランダム文字列生成関数
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
         // 固定ユーザーID
         const id = 'Sender';
+
+        // ランダムに生成されたAuth
+        const auth = generateRandomString(10); // 長さ10のランダム文字列
+        document.getElementById('auth-display').innerText = auth;
 
         // WebSocket接続
         const ws = new WebSocket("wss://cloud.achex.ca/qct");
@@ -59,7 +73,7 @@
             document.getElementById('connection-status').innerText = "接続しました";
 
             // 認証情報を送信
-            ws.send(JSON.stringify({ auth: "hoge", password: "1234" }));
+            ws.send(JSON.stringify({ auth, password: "1234" }));
             
             // ログインメッセージ送信
             ws.send(JSON.stringify({ to: "hoge", id: id, message: "Login" }));

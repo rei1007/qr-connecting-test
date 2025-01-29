@@ -51,6 +51,7 @@
 
     <script>
         let ws; // WebSocketインスタンス
+        const receivedMessages = new Set(); // 重複排除用のセット
 
         // WebSocket接続関数
         function connectWebSocket() {
@@ -60,6 +61,14 @@
             if (!auth || !password) {
                 alert("AuthとPassを入力してください。");
                 return;
+            }
+
+            // 古いWebSocket接続を閉じる（再接続時の対策）
+            if (ws) {
+                ws.close();
+                ws = null;
+                receivedMessages.clear(); // 過去のメッセージIDをクリア
+                document.getElementById('chat-log').innerHTML = ""; // チャットログをクリア
             }
 
             // WebSocket接続
@@ -80,11 +89,12 @@
                 console.log('メッセージ受信:', event.data);
                 const data = JSON.parse(event.data);
 
-                // サーバーからのメッセージのみ表示
-                if (data.id && data.message) {
+                // 重複排除：新しいメッセージのみ処理
+                if (data.id && data.message && !receivedMessages.has(data.message)) {
+                    receivedMessages.add(data.message); // メッセージ内容で重複チェック
                     addChat(data.id, data.message);
                 } else {
-                    console.error("無効なデータ形式:", event.data);
+                    console.warn("重複または無効なメッセージ:", event.data);
                 }
             };
 

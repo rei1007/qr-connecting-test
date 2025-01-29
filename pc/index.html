@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC WebSocket</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h1>QRコードをスキャンしてください</h1>
+  <div id="qrcode"></div>
+
+  <script>
+    const achexUrl = "wss://cloud.achex.ca/your_instance_name";
+    const authInfo = {
+      auth: "your_username",
+      password: "your_password"
+    };
+
+    // WebSocket接続情報をQRコード化
+    const connectionInfo = JSON.stringify({ url: achexUrl, ...authInfo });
+    QRCode.toCanvas(document.getElementById('qrcode'), connectionInfo, (error) => {
+      if (error) console.error(error);
+      console.log('QR Code generated!');
+    });
+
+    // WebSocketサーバーに接続
+    const socket = new WebSocket(achexUrl);
+    socket.addEventListener('open', () => {
+      socket.send(JSON.stringify(authInfo));
+      console.log('Connected to Achex');
+    });
+
+    // メッセージ受信時
+    socket.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data);
+      if (data.msg) {
+        console.log("Received:", data.msg);
+        alert("スマホからのメッセージ: " + data.msg);
+      }
+    });
+  </script>
+</body>
+</html>

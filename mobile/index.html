@@ -73,9 +73,11 @@
                     if (key === 'code') {
                         code = decodedValue;
                         document.getElementById('instance_input').value = code;
+                        console.log(code);
                     } else if (key === 'pass') {
                         pass = decodedValue;
                         document.getElementById('password_input').value = pass;
+                        console.log(pass);
                     }
                 });
             });

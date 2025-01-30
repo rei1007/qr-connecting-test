@@ -20,14 +20,15 @@
 <body>
     <div class="card">
         <h3>スマホとリンク</h3>
-        <p>リンクコード: <strong id="instance-display"></strong></p>
-        <p>リンクPIN: <strong id="password-display"></strong></p>
+        <p>リンクコード: <strong id="instance_display"></strong></p>
+        <p>リンクPIN: <strong id="password_display"></strong></p>
+        <div id="qr_code"></div>
     </div>
 
     <div class="card">
         <h3>接続状態</h3>
-        <p>PC: <span id="pc-status">未接続</span></p>
-        <p>スマホ: <span id="phone-status">未接続</span></p>
+        <p>PC: <span id="pc_status">未接続</span></p>
+        <p>スマホ: <span id="phone_status">未接続</span></p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.js"></script>
@@ -51,11 +52,11 @@
         // ランダムに生成されたAuthとPasswor
         const instance = generateRandomString(5, "inst"); // リンクコード
         const url = "wss://cloud.achex.ca/${instance}";
-        const auth = qctAuth;// 認証
+        const auth = "qct_auth";// 認証
         const password = generateRandomString(5, "pass"); // リンクPIN
 
-        document.getElementById('instance-display').innerText = instance;
-        document.getElementById('password-display').innerText = password;
+        document.getElementById('instance_display').innerText = instance;
+        document.getElementById('password_display').innerText = password;
 
         let ws; // WebSocketインスタンス
         let pcConnected = false;
@@ -66,8 +67,8 @@
 
         ws.onopen = () => {
             console.log('WebSocket接続成功');
-            document.getElementById('pc-status').innerText = "接続OK";
-            document.getElementById('pc-status').style.color = "green";
+            document.getElementById('pc_status').innerText = "接続OK";
+            document.getElementById('pc_status').style.color = "green";
 
             // 認証情報を送信
             const authData = JSON.stringify({ auth, password });
@@ -87,8 +88,8 @@
                 // スマホからのsuccessメッセージを受信した場合
                 if (data.id === "connect_phone" && data.contents === "success") {
                     phoneConnected = true;
-                    document.getElementById('phone-status').innerText = "接続OK";
-                    document.getElementById('phone-status').style.color = "green";
+                    document.getElementById('phone_status').innerText = "接続OK";
+                    document.getElementById('phone_status').style.color = "green";
 
                     // スマホからのsuccessを受信したら、再度PCのsuccessを送信
                     const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
@@ -107,12 +108,12 @@
 
         ws.onclose = () => {
             console.log('WebSocket切断');
-            document.getElementById('pc-status').innerText = "切断";
+            document.getElementById('pc_status').innerText = "切断";
         };
 
         ws.onerror = (error) => {
             console.error('WebSocketエラー:', error);
-            document.getElementById('pc-status').innerText = "エラー";
+            document.getElementById('pc_status').innerText = "エラー";
         };
     </script>
 </body>

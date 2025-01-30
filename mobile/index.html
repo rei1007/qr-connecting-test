@@ -25,17 +25,17 @@
 <body>
     <div class="card">
         <h3>PCとリンク</h3>
-        <label for="instance-input">リンクコード:</label>
-        <input type="text" autocapitalize="characters" id="instance-input" placeholder="リンクコード">
-        <label for="password-input">リンクPIN:</label>
-        <input type="text" id="password-input" placeholder="リンクPIN">
+        <label for="instance_input">リンクコード:</label>
+        <input type="text" autocapitalize="characters" id="instance_input" placeholder="リンクコード">
+        <label for="password_input">リンクPIN:</label>
+        <input type="text" id="password_input" placeholder="リンクPIN">
         <button onclick="connectWebSocket()">接続</button>
     </div>
 
     <div class="card">
         <h3>接続状態</h3>
-        <p>PC: <span id="pc-status">未接続</span></p>
-        <p>スマホ: <span id="phone-status">未接続</span></p>
+        <p>PC: <span id="pc_status">未接続</span></p>
+        <p>スマホ: <span id="phone_status">未接続</span></p>
     </div>
 
     <script>
@@ -44,9 +44,10 @@
         let phoneConnected = false;
 
         function connectWebSocket() {
-            const instance = document.getElementById('instance-input').value.trim();
+            const instance = document.getElementById('instance_input').value.trim();
             const url = "wss://cloud.achex.ca/${instance}";
-            const password = document.getElementById('password-input').value.trim();
+            const auth = "qct_auth";
+            const password = document.getElementById('password_input').value.trim();
 
             if (!auth || !password) {
                 alert("リンクコードとリンクPINを入力してください。");
@@ -57,8 +58,8 @@
 
             ws.onopen = () => {
                 console.log('WebSocket接続成功');
-                document.getElementById('phone-status').innerText = "接続OK";
-                document.getElementById('phone-status').style.color = "green";
+                document.getElementById('phone_status').innerText = "接続OK";
+                document.getElementById('phone_status').style.color = "green";
 
                 // 認証情報を送信
                 const authData = JSON.stringify({ auth, password });
@@ -78,8 +79,8 @@
                     // PCからのsuccessメッセージを受信した場合
                     if (data.id === "connect_pc" && data.contents === "success") {
                         pcConnected = true;
-                        document.getElementById('pc-status').innerText = "接続OK";
-                        document.getElementById('pc-status').style.color = "green";
+                        document.getElementById('pc_status').innerText = "接続OK";
+                        document.getElementById('pc_status').style.color = "green";
                     }
 
                     // スマホからのsuccessメッセージを受信した場合（デバッグ用）
@@ -93,12 +94,12 @@
 
             ws.onclose = () => {
                 console.log('WebSocket切断');
-                document.getElementById('phone-status').innerText = "切断";
+                document.getElementById('phone_status').innerText = "切断";
             };
 
             ws.onerror = (error) => {
                 console.error('WebSocketエラー:', error);
-                document.getElementById('phone-status').innerText = "エラー";
+                document.getElementById('phone_status').innerText = "エラー";
             };
         }
     </script>

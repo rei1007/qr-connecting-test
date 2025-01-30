@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achex WebSocket Viewer</title>
+    <style>
+        #status {
+            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f9f9f9;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
+        }
+        #chat-log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        #auth-form {
+            margin-top: 20px;
+        }
+        input {
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <!-- 接続情報 -->
+    <div id="status">
+        接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
+        状態: <span id="connection-status">未接続</span>
+    </div>
+
+    <h2>Achex WebSocket Viewer</h2>
+
+    <!-- AuthとPassの入力フォーム -->
+    <div id="auth-form">
+        <label for="auth-input">Auth:</label>
+        <input type="text" id="auth-input" placeholder="Authを入力">
+        <label for="pass-input">Pass:</label>
+        <input type="number" id="pass-input" placeholder="Passを入力">
+        <button onclick="connectWebSocket()">接続</button>
+    </div>
+
+    <!-- チャットログ -->
+    <div id="chat-log"></div>
+
+    <script>
+        let ws; // WebSocketインスタンス
+        const receivedMessages = new Set(); // 重複排除用のセット
+
+        // WebSocket接続関数
+        function connectWebSocket() {
+            const auth = document.getElementById('auth-input').value.trim();
+            const password = document.getElementById('pass-input').value.trim();
+
+            if (!auth || !password) {
+                alert("AuthとPassを入力してください。");
+                return;
+            }
+
+            // 古いWebSocket接続を閉じる（再接続時の対策）
+            if (ws) {
+                ws.close();
+                ws = null;
+                receivedMessages.clear(); // 過去のメッセージIDをクリア
+                document.getElementById('chat-log').innerHTML = ""; // チャットログをクリア
+            }
+
+            // WebSocket接続
+            ws = new WebSocket("wss://cloud.achex.ca/qct");
+
+            // 接続時の処理
+            ws.onopen = () => {
+                console.log('WebSocket接続成功');
+                document.getElementById('connection-status').innerText = "接続しました";
+
+                // 認証情報を送信
+                ws.send(JSON.stringify({ auth, password }));
+                console.log(`認証情報送信: Auth=${auth}, Pass=${password}`);
+
+                // 接続成功後にid「Viewer」でSuccessを送信
+                const successMessage = JSON.stringify({ to: auth, id: "Viewer", message: "Success" });
+                console.log(`送信するメッセージ: ${successMessage}`);
+                ws.send(successMessage);
+            };
+
+            // メッセージ受信時の処理
+            ws.onmessage = (event) => {
+                console.log('メッセージ受信:', event.data);
+                const data = JSON.parse(event.data);
+
+                // 重複排除：新しいメッセージのみ処理
+                if (data.id && data.message && !receivedMessages.has(data.message)) {
+                    receivedMessages.add(data.message); // メッセージ内容で重複チェック
+                    addChat(data.id, data.message);
+                } else {
+                    console.warn("重複または無効なメッセージ:", event.data);
+                }
+            };
+
+            // 切断時の処理
+            ws.onclose = () => {
+                console.log('WebSocket切断');
+                document.getElementById('connection-status').innerText = "接続が切断されました";
+                ws = null; // WebSocketインスタンスをリセット
+            };
+
+            // エラー時の処理
+            ws.onerror = (error) => {
+                console.error('WebSocketエラー:', error);
+                document.getElementById('connection-status').innerText = "エラーが発生しました";
+            };
+        }
+
+        // チャットログにメッセージを追加する関数
+        function addChat(senderId, message) {
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
+            chatLog.scrollTop = chatLog.scrollHeight; // 自動スクロール
+        }
+    </script>
+</body>
+</html>

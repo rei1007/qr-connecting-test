@@ -3,129 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Achex WebSocket Viewer</title>
+    <title>PC用ページ</title>
     <style>
-        #status {
-            position: relative;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #f9f9f9;
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-            font-size: 14px;
-        }
-        #chat-log {
-            max-height: 300px;
-            overflow-y: auto;
+        .card {
             border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 20px;
-        }
-        #auth-form {
-            margin-top: 20px;
-        }
-        input {
-            text-transform: uppercase;
+            padding: 20px;
+            margin: 20px auto;
+            width: 300px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <!-- 接続情報 -->
-    <div id="status">
-        接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
-        状態: <span id="connection-status">未接続</span>
+    <div class="card">
+        <h3>リンクコードとリンクPIN</h3>
+        <p>リンクコード: <strong id="auth-display"></strong></p>
+        <p>リンクPIN: <strong id="password-display"></strong></p>
     </div>
 
-    <h2>Achex WebSocket Viewer</h2>
-
-    <!-- AuthとPassの入力フォーム -->
-    <div id="auth-form">
-        <label for="auth-input">Auth:</label>
-        <input type="text" id="auth-input" placeholder="Authを入力">
-        <label for="pass-input">Pass:</label>
-        <input type="number" id="pass-input" placeholder="Passを入力">
-        <button onclick="connectWebSocket()">接続</button>
+    <div class="card">
+        <h3>接続状態</h3>
+        <p>PC: <span id="pc-status">未接続</span></p>
+        <p>スマホ: <span id="phone-status">未接続</span></p>
     </div>
-
-    <!-- チャットログ -->
-    <div id="chat-log"></div>
 
     <script>
+        // ランダム文字列生成関数
+        function generateRandomString(length, type) {
+            let characters = '';
+            if (type === "auth") {
+                characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            } else if (type === "pass") {
+                characters = "0123456789";
+            }
+            
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // ランダムに生成されたAuthとPassword
+        const auth = generateRandomString(5, "auth"); // リンクコード
+        const password = generateRandomString(5, "pass"); // リンクPIN
+
+        document.getElementById('auth-display').innerText = auth;
+        document.getElementById('password-display').innerText = password;
+
         let ws; // WebSocketインスタンス
-        const receivedMessages = new Set(); // 重複排除用のセット
+        let pcConnected = false;
+        let phoneConnected = false;
 
-        // WebSocket接続関数
-        function connectWebSocket() {
-            const auth = document.getElementById('auth-input').value.trim();
-            const password = document.getElementById('pass-input').value.trim();
+        // WebSocket接続
+        ws = new WebSocket("wss://cloud.achex.ca/qct");
 
-            if (!auth || !password) {
-                alert("AuthとPassを入力してください。");
-                return;
+        ws.onopen = () => {
+            console.log('WebSocket接続成功');
+            document.getElementById('pc-status').innerText = "接続中";
+
+            // 認証情報を送信
+            const authData = JSON.stringify({ auth, password });
+            ws.send(authData);
+
+            // PC接続成功メッセージを送信
+            const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
+            ws.send(connectMessage);
+            console.log('送信: ID=connect_pc, Contents=success');
+        };
+
+        ws.onmessage = (event) => {
+            console.log('受信:', event.data);
+            const data = JSON.parse(event.data);
+
+            if (data.id === "connect_phone" && data.contents === "success") {
+                phoneConnected = true;
+                document.getElementById('phone-status').innerText = "接続済み";
+
+                // スマホからのsuccessを受信したら、再度PCのsuccessを送信
+                const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
+                ws.send(connectMessage);
+                console.log('送信: ID=connect_pc, Contents=success');
             }
+        };
 
-            // 古いWebSocket接続を閉じる（再接続時の対策）
-            if (ws) {
-                ws.close();
-                ws = null;
-                receivedMessages.clear(); // 過去のメッセージIDをクリア
-                document.getElementById('chat-log').innerHTML = ""; // チャットログをクリア
-            }
+        ws.onclose = () => {
+            console.log('WebSocket切断');
+            document.getElementById('pc-status').innerText = "切断";
+        };
 
-            // WebSocket接続
-            ws = new WebSocket("wss://cloud.achex.ca/qct");
-
-            // 接続時の処理
-            ws.onopen = () => {
-                console.log('WebSocket接続成功');
-                document.getElementById('connection-status').innerText = "接続しました";
-
-                // 認証情報を送信
-                ws.send(JSON.stringify({ auth, password }));
-                console.log(`認証情報送信: Auth=${auth}, Pass=${password}`);
-
-                // 接続成功後にid「Viewer」でSuccessを送信
-                const successMessage = JSON.stringify({ to: auth, id: "Viewer", message: "Success" });
-                console.log(`送信するメッセージ: ${successMessage}`);
-                ws.send(successMessage);
-            };
-
-            // メッセージ受信時の処理
-            ws.onmessage = (event) => {
-                console.log('メッセージ受信:', event.data);
-                const data = JSON.parse(event.data);
-
-                // 重複排除：新しいメッセージのみ処理
-                if (data.id && data.message && !receivedMessages.has(data.message)) {
-                    receivedMessages.add(data.message); // メッセージ内容で重複チェック
-                    addChat(data.id, data.message);
-                } else {
-                    console.warn("重複または無効なメッセージ:", event.data);
-                }
-            };
-
-            // 切断時の処理
-            ws.onclose = () => {
-                console.log('WebSocket切断');
-                document.getElementById('connection-status').innerText = "接続が切断されました";
-                ws = null; // WebSocketインスタンスをリセット
-            };
-
-            // エラー時の処理
-            ws.onerror = (error) => {
-                console.error('WebSocketエラー:', error);
-                document.getElementById('connection-status').innerText = "エラーが発生しました";
-            };
-        }
-
-        // チャットログにメッセージを追加する関数
-        function addChat(senderId, message) {
-            const chatLog = document.getElementById('chat-log');
-            chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
-            chatLog.scrollTop = chatLog.scrollHeight; // 自動スクロール
-        }
+        ws.onerror = (error) => {
+            console.error('WebSocketエラー:', error);
+            document.getElementById('pc-status').innerText = "エラー";
+        };
     </script>
 </body>
 </html>

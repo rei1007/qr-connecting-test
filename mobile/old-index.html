@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achex WebSocket Example</title>
+    <style>
+        #status {
+            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f9f9f9;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            font-size: 14px;
+        }
+        #chat-log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .status-section {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 接続情報 -->
+    <div id="status">
+        <div class="status-section">
+            <strong>状態:</strong> 
+            <span id="connection-status">接続中...</span> |
+            Sender状態: <span id="sender-status">未受信</span> |
+            Viewer状態: <span id="viewer-status">未受信</span>
+        </div>
+        <div class="status-section">
+            接続先: <strong>wss://cloud.achex.ca/qct</strong> | 
+            Auth: <strong id="auth-display"></strong> | 
+            Password: <strong id="password-display"></strong> | 
+            User ID: <strong>Sender</strong>
+        </div>
+    </div>
+
+    <h2>WebSocketでチャット</h2>
+
+    <!-- チャットログ -->
+    <div id="chat-log"></div>
+
+    <!-- メッセージ入力 -->
+    <input type="text" id="message-input" placeholder="メッセージを入力">
+    <button onclick="sendMessage()">送信</button>
+
+    <script>
+        // ランダム文字列生成関数
+        function generateRandomString(length,type) {
+            console.log(type);
+            let characters = '';
+            if (type === "auth") {
+                characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            } else if (type === "pass") {
+                characters = "0123456789";
+            }
+            
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // 固定ユーザーID
+        const id = 'Sender';
+
+        // ランダムに生成されたAuthとPassword
+        const auth = generateRandomString(5,"auth"); // 長さ5のランダム文字列
+        const password = generateRandomString(5,"pass"); // 長さ5のランダム文字列
+
+        console.log(`生成されたAuth: ${auth}`); // ログ：生成されたAuth
+        console.log(`生成されたPassword: ${password}`); // ログ：生成されたPassword
+
+        document.getElementById('auth-display').innerText = auth;
+        document.getElementById('password-display').innerText = password;
+
+        // WebSocket接続
+        const ws = new WebSocket("wss://cloud.achex.ca/qct");
+        console.log("WebSocketインスタンス作成"); // ログ：WebSocketインスタンス作成
+
+        // 状態追跡用フラグ
+        let senderSuccessReceived = false;
+        let viewerSuccessReceived = false;
+
+        // 接続時の処理
+        ws.onopen = () => {
+            console.log('WebSocket接続成功'); // ログ：接続成功
+            
+            // 接続状況を更新
+            document.getElementById('connection-status').innerText = "接続しました";
+
+            // 認証情報を送信
+            const authData = JSON.stringify({ auth, password });
+            console.log(`送信する認証情報: ${authData}`); // ログ：送信する認証情報
+            ws.send(authData);
+            
+            // ログインメッセージ送信
+            const loginMessage = JSON.stringify({ to: auth, id, message: "Success" });
+            console.log(`送信するログインメッセージ: ${loginMessage}`); // ログ：送信するログインメッセージ
+            ws.send(loginMessage);
+        };
+
+        // メッセージ受信時の処理
+        ws.onmessage = (event) => {
+            console.log('メッセージ受信:', event.data); // ログ：受信したメッセージ
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.auth === 'OK') {
+                    console.log('認証成功'); // ログ：認証成功
+                    return;
+                }
+
+                // サーバーからのメッセージのみ表示
+                if (data.id && data.message) {
+                    addChat(data.id, data.message);
+
+                    // SenderまたはViewerのSuccess状態を更新
+                    if (data.id === "Sender" && data.message === "Success") {
+                        senderSuccessReceived = true;
+                        document.getElementById('sender-status').innerText = "受信済み";
+                        console.log("SenderのSuccessを受信しました");
+                    }
+                    if (data.id === "Viewer" && data.message === "Success") {
+                        viewerSuccessReceived = true;
+                        document.getElementById('viewer-status').innerText = "受信済み";
+                        console.log("ViewerのSuccessを受信しました");
+                    }
+                } else {
+                    console.warn("無効なデータ形式:", event.data); // 警告：無効なデータ形式
+                }
+            } catch (e) {
+                console.error("受信データの解析エラー:", e, event.data); // エラー：JSON解析エラー
+            }
+        };
+
+        // 切断時の処理
+        ws.onclose = () => {
+            console.log('WebSocket切断'); // ログ：切断
+            document.getElementById('connection-status').innerText = "接続が切断されました";
+        };
+
+        // エラー時の処理
+        ws.onerror = (error) => {
+            console.error('WebSocketエラー:', error); // エラー：WebSocketエラー
+            document.getElementById('connection-status').innerText = "エラーが発生しました";
+        };
+
+        // メッセージ送信関数
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value;
+
+            if (message.trim() !== '') {
+                const messageData = JSON.stringify({ to: auth, id, message });
+                console.log(`送信するメッセージ: ${messageData}`); // ログ：送信するメッセージ
+                ws.send(messageData);
+                input.value = ''; // 入力欄をクリア
+                // 自分のメッセージはチャットログに表示しない（サーバーからの応答のみ表示）
+            }
+        }
+
+        // チャットログにメッセージを追加する関数
+        function addChat(senderId, message) {
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML += `<p><strong>${senderId}:</strong> ${message}</p>`;
+            chatLog.scrollTop = chatLog.scrollHeight; // 自動スクロール
+        }
+    </script>
+</body>
+</html>

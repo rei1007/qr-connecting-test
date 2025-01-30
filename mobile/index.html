@@ -54,7 +54,8 @@
 
             ws.onopen = () => {
                 console.log('WebSocket接続成功');
-                document.getElementById('phone-status').innerText = "接続中";
+                document.getElementById('phone-status').innerText = "接続OK";
+                document.getElementById('phone-status').style.color = "green";
 
                 // 認証情報を送信
                 const authData = JSON.stringify({ auth, password });
@@ -74,7 +75,8 @@
                     // PCからのsuccessメッセージを受信した場合
                     if (data.id === "connect_pc" && data.contents === "success") {
                         pcConnected = true;
-                        document.getElementById('pc-status').innerText = "接続済み";
+                        document.getElementById('pc-status').innerText = "接続OK";
+                        document.getElementById('pc-status').style.color = "green";
                     }
 
                     // スマホからのsuccessメッセージを受信した場合（デバッグ用）

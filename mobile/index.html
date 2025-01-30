@@ -16,9 +16,12 @@
         }
 
         input {
-            display: block;
             margin: 5px;
             padding: 5px;
+        }
+
+        label {
+            display: block;
         }
     </style>
 </head>
@@ -49,6 +52,24 @@
             const url = "wss://cloud.achex.ca/${instance}";
             const auth = "qct_auth";
             const password = document.getElementById('password_input').value.trim();
+            let code, pass;
+
+            window.addEventListener('load', function () {
+                const hash = window.location.hash;
+                const hashContent = hash.substring(1);
+                const keyValuePairs = hashContent.split('&');
+
+                keyValuePairs.forEach(pair => {
+                    const [key, value] = pair.split('=');
+                    const decodedValue = decodeURIComponent(value);
+
+                    if (key === 'code') {
+                        code = decodedValue;
+                    } else if (key === 'pass') {
+                        pass = decodedValue;
+                    }
+                });
+            });
 
             if (!auth || !password) {
                 alert("リンクコードとリンクPINを入力してください。");

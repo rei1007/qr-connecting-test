@@ -109,6 +109,7 @@
 }
 
 #connect_page .connect_status {
+    padding: 10px;
     transition: background 0.3s ease;
     background: #f39898;
     width: 100%;

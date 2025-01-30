@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="card">
         <h3>リンクコードとリンクPIN</h3>
@@ -36,7 +38,7 @@
             } else if (type === "pass") {
                 characters = "0123456789";
             }
-            
+
             let result = '';
             for (let i = 0; i < length; i++) {
                 result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -74,16 +76,26 @@
 
         ws.onmessage = (event) => {
             console.log('受信:', event.data);
-            const data = JSON.parse(event.data);
+            try {
+                const data = JSON.parse(event.data);
 
-            if (data.id === "connect_phone" && data.contents === "success") {
-                phoneConnected = true;
-                document.getElementById('phone-status').innerText = "接続済み";
+                // スマホからのsuccessメッセージを受信した場合
+                if (data.id === "connect_phone" && data.contents === "success") {
+                    phoneConnected = true;
+                    document.getElementById('phone-status').innerText = "接続済み";
 
-                // スマホからのsuccessを受信したら、再度PCのsuccessを送信
-                const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
-                ws.send(connectMessage);
-                console.log('送信: ID=connect_pc, Contents=success');
+                    // スマホからのsuccessを受信したら、再度PCのsuccessを送信
+                    const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
+                    ws.send(connectMessage);
+                    console.log('送信: ID=connect_pc, Contents=success');
+                }
+
+                // PCからのsuccessメッセージを受信した場合（デバッグ用）
+                if (data.id === "connect_pc" && data.contents === "success") {
+                    console.log("PCからのsuccessを受信");
+                }
+            } catch (e) {
+                console.error("受信データの解析エラー:", e);
             }
         };
 
@@ -98,4 +110,5 @@
         };
     </script>
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +13,14 @@
             width: 300px;
             text-align: center;
         }
+
         input {
             margin: 5px;
             padding: 5px;
         }
     </style>
 </head>
+
 <body>
     <div class="card">
         <h3>リンクコードとリンクPINを入力</h3>
@@ -64,11 +67,21 @@
 
             ws.onmessage = (event) => {
                 console.log('受信:', event.data);
-                const data = JSON.parse(event.data);
+                try {
+                    const data = JSON.parse(event.data);
 
-                if (data.id === "connect_pc" && data.contents === "success") {
-                    pcConnected = true;
-                    document.getElementById('pc-status').innerText = "接続済み";
+                    // PCからのsuccessメッセージを受信した場合
+                    if (data.id === "connect_pc" && data.contents === "success") {
+                        pcConnected = true;
+                        document.getElementById('pc-status').innerText = "接続済み";
+                    }
+
+                    // スマホからのsuccessメッセージを受信した場合（デバッグ用）
+                    if (data.id === "connect_phone" && data.contents === "success") {
+                        console.log("スマホからのsuccessを受信");
+                    }
+                } catch (e) {
+                    console.error("受信データの解析エラー:", e);
                 }
             };
 
@@ -84,4 +97,5 @@
         }
     </script>
 </body>
+
 </html>

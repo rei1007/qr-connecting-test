@@ -5,36 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PC用ページ</title>
-    <style>
-        .card {
-            border: 1px solid #ccc;
-            padding: 20px;
-            margin: 20px auto;
-            width: 300px;
-            text-align: center;
-            border-radius: 10px;
-        }
-
-        #qr_code {
-            margin: 0 auto;
-            width: 200px;
-            height: 200px;
-        }
-    </style>
+    <link href="https://unpkg.com/@acab/reset.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/connect.css">
 </head>
 
 <body>
-    <div class="card">
-        <h3>スマホとリンク</h3>
-        <p>リンクコード: <strong id="instance_display"></strong></p>
-        <p>リンクPIN: <strong id="password_display"></strong></p>
-        <div id="qr_code"></div>
-    </div>
+    <div id="connect_page">
+        <div class="card link_card">
+            <p>リンクコード</p>
+            <p id="instance_display" class="strong"></p>
+            <p>リンクPIN</p>
+            <p id="password_display" class="strong"></p>
+            <p class="link_text">コードとPINを入力<br>もしくはQRコードをスキャン</p>
+            <div id="qr_code"></div>
+        </div>
 
-    <div class="card">
-        <h3>接続状態</h3>
-        <p>PC: <span id="pc_status">未接続</span></p>
-        <p>スマホ: <span id="phone_status">未接続</span></p>
+        <div class="card_wrap">
+            <div id="pc_status_card" class="card connect_status">
+                <p>PC: <span id="pc_status">未接続</span></p>
+            </div>
+            <div id="phone_status_card" class="card connect_status">
+                <p>スマホ: <span id="phone_status">未接続</span></p>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
@@ -66,8 +59,8 @@
 
         const qrcode = new QRCode(document.getElementById("qr_code"), {
             text: `https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`,
-            width: 200,
-            height: 200,
+            width: 120,
+            height: 120,
             colorDark: "#000000",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
@@ -85,7 +78,7 @@
         ws.onopen = () => {
             console.log('WebSocket接続成功');
             document.getElementById('pc_status').innerText = "接続OK";
-            document.getElementById('pc_status').style.color = "green";
+            document.getElementById('pc_status_card').style.background = "#61b968";
 
             // 認証情報を送信
             const authData = JSON.stringify({ auth, password });
@@ -106,7 +99,7 @@
                 if (data.id === "connect_phone" && data.contents === "success") {
                     phoneConnected = true;
                     document.getElementById('phone_status').innerText = "接続OK";
-                    document.getElementById('phone_status').style.color = "green";
+                    document.getElementById('phone_status_card').style.background = "#61b968";
 
                     // スマホからのsuccessを受信したら、再度PCのsuccessを送信
                     const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
@@ -126,11 +119,13 @@
         ws.onclose = () => {
             console.log('WebSocket切断');
             document.getElementById('pc_status').innerText = "切断";
+            document.getElementById('pc_status_card').style.background = "#b96161";
         };
 
         ws.onerror = (error) => {
             console.error('WebSocketエラー:', error);
             document.getElementById('pc_status').innerText = "エラー";
+            document.getElementById('pc_status_card').style.background = "#b96161";
         };
     </script>
 </body>

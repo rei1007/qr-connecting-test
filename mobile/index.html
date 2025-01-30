@@ -5,50 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>スマホ用ページ</title>
-    <style>
-        .card {
-            border: 1px solid #ccc;
-            padding: 20px;
-            margin: 20px auto;
-            width: 300px;
-            text-align: center;
-            border-radius: 10px;
-        }
-
-        input {
-            margin: 5px;
-            padding: 5px;
-        }
-
-        label,
-        button {
-            display: block;
-        }
-
-        #instance_input {
-            text-transform: uppercase;
-        }
-
-        button {
-            margin: 10px auto;
-        }
-    </style>
+    <link href="https://unpkg.com/@acab/reset.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/connect.css">
 </head>
 
 <body>
-    <div class="card">
-        <h3>PCとリンク</h3>
-        <label for="instance_input">リンクコード:</label>
-        <input type="text" autocapitalize="characters" id="instance_input" placeholder="リンクコード">
-        <label for="password_input">リンクPIN:</label>
-        <input type="number" id="password_input" placeholder="リンクPIN">
-        <button onclick="connectWebSocket()">接続</button>
-    </div>
-
-    <div class="card">
-        <h3>接続状態</h3>
-        <p>PC: <span id="pc_status">未接続</span></p>
-        <p>スマホ: <span id="phone_status">未接続</span></p>
+    <div id="connect_page">
+        <div class="card link_card">
+            <label for="instance_input">リンクコード</label>
+            <input type="text" autocapitalize="characters" id="instance_input">
+            <label for="password_input">リンクPIN</label>
+            <input type="number" id="password_input">
+            <button onclick="connectWebSocket()">接続</button>
+        </div>
+    
+        <div class="card_wrap">
+            <div id="pc_status_card" class="card connect_status">
+                <p>PC: <span id="pc_status">未接続</span></p>
+            </div>
+            <div id="phone_status_card" class="card connect_status">
+                <p>スマホ: <span id="phone_status">未接続</span></p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -97,7 +75,7 @@
             ws.onopen = () => {
                 console.log('WebSocket接続成功');
                 document.getElementById('phone_status').innerText = "接続OK";
-                document.getElementById('phone_status').style.color = "green";
+                document.getElementById('phone_status_card').style.background = "#61b968";
 
                 // 認証情報を送信
                 const authData = JSON.stringify({ auth, password });
@@ -118,7 +96,7 @@
                     if (data.id === "connect_pc" && data.contents === "success") {
                         pcConnected = true;
                         document.getElementById('pc_status').innerText = "接続OK";
-                        document.getElementById('pc_status').style.color = "green";
+                        document.getElementById('pc_status_card').style.background = "#61b968";
                     }
 
                     // スマホからのsuccessメッセージを受信した場合（デバッグ用）
@@ -133,11 +111,13 @@
             ws.onclose = () => {
                 console.log('WebSocket切断');
                 document.getElementById('phone_status').innerText = "切断";
+                document.getElementById('phone_status_card').style.background = "#b96161";
             };
 
             ws.onerror = (error) => {
                 console.error('WebSocketエラー:', error);
                 document.getElementById('phone_status').innerText = "エラー";
+                document.getElementById('phone_status_card').style.background = "#b96161";
             };
         }
     </script>

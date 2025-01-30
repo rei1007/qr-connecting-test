@@ -24,8 +24,10 @@
 
 <body>
     <div class="card">
-        <h3>リンクコードとリンクPINを入力</h3>
-        <input type="text" autocapitalize="characters" id="auth-input" placeholder="リンクコード">
+        <h3>PCとリンク</h3>
+        <label for="instance-input">リンクコード:</label>
+        <input type="text" autocapitalize="characters" id="instance-input" placeholder="リンクコード">
+        <label for="password-input">リンクPIN:</label>
         <input type="text" id="password-input" placeholder="リンクPIN">
         <button onclick="connectWebSocket()">接続</button>
     </div>
@@ -42,7 +44,8 @@
         let phoneConnected = false;
 
         function connectWebSocket() {
-            const auth = document.getElementById('auth-input').value.trim();
+            const instance = document.getElementById('instance-input').value.trim();
+            const url = "wss://cloud.achex.ca/${instance}";
             const password = document.getElementById('password-input').value.trim();
 
             if (!auth || !password) {
@@ -50,7 +53,7 @@
                 return;
             }
 
-            ws = new WebSocket("wss://cloud.achex.ca/QCT");
+            ws = new WebSocket(url);
 
             ws.onopen = () => {
                 console.log('WebSocket接続成功');

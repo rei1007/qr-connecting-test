@@ -19,8 +19,8 @@
 
 <body>
     <div class="card">
-        <h3>リンクコードとリンクPIN</h3>
-        <p>リンクコード: <strong id="auth-display"></strong></p>
+        <h3>スマホとリンク</h3>
+        <p>リンクコード: <strong id="instance-display"></strong></p>
         <p>リンクPIN: <strong id="password-display"></strong></p>
     </div>
 
@@ -30,11 +30,12 @@
         <p>スマホ: <span id="phone-status">未接続</span></p>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.js"></script>
     <script>
         // ランダム文字列生成関数
         function generateRandomString(length, type) {
             let characters = '';
-            if (type === "auth") {
+            if (type === "inst") {
                 characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             } else if (type === "pass") {
                 characters = "0123456789";
@@ -47,11 +48,13 @@
             return result;
         }
 
-        // ランダムに生成されたAuthとPassword
-        const auth = generateRandomString(5, "auth"); // リンクコード
+        // ランダムに生成されたAuthとPasswor
+        const instance = generateRandomString(5, "inst"); // リンクコード
+        const url = "wss://cloud.achex.ca/${instance}";
+        const auth = qctAuth;// 認証
         const password = generateRandomString(5, "pass"); // リンクPIN
 
-        document.getElementById('auth-display').innerText = auth;
+        document.getElementById('instance-display').innerText = instance;
         document.getElementById('password-display').innerText = password;
 
         let ws; // WebSocketインスタンス
@@ -59,7 +62,7 @@
         let phoneConnected = false;
 
         // WebSocket接続
-        ws = new WebSocket("wss://cloud.achex.ca/QCT");
+        ws = new WebSocket(url);
 
         ws.onopen = () => {
             console.log('WebSocket接続成功');

@@ -60,7 +60,7 @@
                 ws.send(authData);
 
                 // スマホ接続成功メッセージを送信
-                const connectMessage = JSON.stringify({ id: "connect_phone", contents: "success" });
+                const connectMessage = JSON.stringify({ to: auth, id: "connect_phone", contents: "success" });
                 ws.send(connectMessage);
                 console.log('送信: ID=connect_phone, Contents=success');
             };

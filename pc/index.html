@@ -69,7 +69,7 @@
             ws.send(authData);
 
             // PC接続成功メッセージを送信
-            const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
+            const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
             ws.send(connectMessage);
             console.log('送信: ID=connect_pc, Contents=success');
         };
@@ -85,7 +85,7 @@
                     document.getElementById('phone-status').innerText = "接続済み";
 
                     // スマホからのsuccessを受信したら、再度PCのsuccessを送信
-                    const connectMessage = JSON.stringify({ id: "connect_pc", contents: "success" });
+                    const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
                     ws.send(connectMessage);
                     console.log('送信: ID=connect_pc, Contents=success');
                 }

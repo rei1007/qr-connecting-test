@@ -7,8 +7,8 @@
     <title>PC用ページ</title>
     <link href="https://unpkg.com/@acab/reset.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/connect.css">
-</head>
-
+</head>font-size: 25px;
+    line-height: 25px;
 <body>
     <div id="connect_page">
         <div class="card link_card">
@@ -49,10 +49,10 @@
         }
 
         // ランダムに生成されたAuthとPasswor
-        const instance = generateRandomString(5, "inst"); // リンクコード
+        const instance = generateRandomString(4, "inst"); // リンクコード
         const url = `wss://cloud.achex.ca/${instance}`;
         const auth = "qct_auth";// 認証
-        const password = generateRandomString(5, "pass"); // リンクPIN
+        const password = generateRandomString(4, "pass"); // リンクPIN
 
         document.getElementById('instance_display').innerText = instance;
         document.getElementById('password_display').innerText = password;

@@ -16,6 +16,7 @@
         }
 
         #qr_code {
+            margin: 0 auto;
             width: 200px;
             height: 200px;
         }
@@ -63,14 +64,13 @@
         document.getElementById('instance_display').innerText = instance;
         document.getElementById('password_display').innerText = password;
 
-        displayQRCode();
-        function displayQRCode() {
+        (function () {
             const qrUrl = `https://https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`;
             const qr = new QRious({
                 element: document.getElementById('qr_code'),
                 value: qrUrl
             })
-        }
+        })();
 
         let ws; // WebSocketインスタンス
         let pcConnected = false;

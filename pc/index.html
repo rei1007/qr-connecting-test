@@ -56,7 +56,7 @@
 
         // ランダムに生成されたAuthとPasswor
         const instance = generateRandomString(5, "inst"); // リンクコード
-        const url = "wss://cloud.achex.ca/${instance}";
+        const url = `wss://cloud.achex.ca/${instance}`;
         const auth = "qct_auth";// 認証
         const password = generateRandomString(5, "pass"); // リンクPIN
 
@@ -65,8 +65,7 @@
 
         displayQRCode();
         function displayQRCode() {
-            const qrUrl = 'https://https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}';
-            console.log(qrUrl);
+            const qrUrl = `https://https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`;
             const qr = new QRious({
                 element: document.getElementById('qr_code'),
                 value: qrUrl

@@ -57,7 +57,7 @@
 
         function connectWebSocket() {
             const instance = document.getElementById('instance_input').value.trim();
-            const url = "wss://cloud.achex.ca/${instance}";
+            const url = `wss://cloud.achex.ca/${instance}`;
             const auth = "qct_auth";
             const password = document.getElementById('password_input').value.trim();
 

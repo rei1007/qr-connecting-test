@@ -66,6 +66,7 @@
         displayQRCode();
         function displayQRCode() {
             const qrUrl = 'https://https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}';
+            console.log(qrUrl);
             const qr = new QRious({
                 element: document.getElementById('qr_code'),
                 value: qrUrl

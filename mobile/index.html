@@ -65,6 +65,7 @@
                 const hash = window.location.hash;
                 const hashContent = hash.substring(1);
                 const keyValuePairs = hashContent.split('&');
+                console.log(hash);
 
                 keyValuePairs.forEach(pair => {
                     const [key, value] = pair.split('=');

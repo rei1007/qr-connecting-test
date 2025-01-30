@@ -37,7 +37,7 @@
         <p>スマホ: <span id="phone_status">未接続</span></p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
     <script>
         // ランダム文字列生成関数
         function generateRandomString(length, type) {
@@ -64,13 +64,14 @@
         document.getElementById('instance_display').innerText = instance;
         document.getElementById('password_display').innerText = password;
 
-        (function () {
-            const qrUrl = `https://https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`;
-            const qr = new QRious({
-                element: document.getElementById('qr_code'),
-                value: qrUrl
-            })
-        })();
+        const qrcode = new QRCode(document.getElementById("qr_code"), {
+            text: `https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`,
+            width: 128,
+            height: 128,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
 
         let ws; // WebSocketインスタンス
         let pcConnected = false;

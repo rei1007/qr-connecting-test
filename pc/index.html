@@ -14,7 +14,7 @@
             <p>リンクコード</p>
             <p id="instance_display" class="strong"></p>
             <p>リンクPIN</p>
-            <p id="password_display" class="strong"></p>
+            <p id="auth_display" class="strong"></p>
             <p class="link_text">コードとPINを入力<br>もしくはQRコードをスキャン</p>
             <div id="qr_code"></div>
         </div>
@@ -30,103 +30,7 @@
     </div>
 
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
-    <script>
-        // ランダム文字列生成関数
-        function generateRandomString(length, type) {
-            let characters = '';
-            if (type === "inst") {
-                characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            } else if (type === "pass") {
-                characters = "0123456789";
-            }
-
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
-            return result;
-        }
-
-        // ランダムに生成されたAuthとPasswor
-        const instance = generateRandomString(4, "inst"); // リンクコード
-        const url = `wss://cloud.achex.ca/${instance}`;
-        const auth = "qct_auth";// 認証
-        const password = generateRandomString(4, "pass"); // リンクPIN
-
-        document.getElementById('instance_display').innerText = instance;
-        document.getElementById('password_display').innerText = password;
-
-        const qrcode = new QRCode(document.getElementById("qr_code"), {
-            text: `https://qr-connecting-test.pages.dev/mobile/#code=${instance}&pass=${password}`,
-            width: 120,
-            height: 120,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
-        console.log(qrcode);
-
-
-        let ws; // WebSocketインスタンス
-        let pcConnected = false;
-        let phoneConnected = false;
-
-        // WebSocket接続
-        ws = new WebSocket(url);
-
-        ws.onopen = () => {
-            console.log('WebSocket接続成功');
-            document.getElementById('pc_status').innerText = "接続OK";
-            document.getElementById('pc_status_card').style.background = "#61b968";
-
-            // 認証情報を送信
-            const authData = JSON.stringify({ auth, password });
-            ws.send(authData);
-
-            // PC接続成功メッセージを送信
-            const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
-            ws.send(connectMessage);
-            console.log('送信: ID=connect_pc, Contents=success');
-        };
-
-        ws.onmessage = (event) => {
-            console.log('受信:', event.data);
-            try {
-                const data = JSON.parse(event.data);
-
-                // スマホからのsuccessメッセージを受信した場合
-                if (data.id === "connect_phone" && data.contents === "success") {
-                    phoneConnected = true;
-                    document.getElementById('phone_status').innerText = "接続OK";
-                    document.getElementById('phone_status_card').style.background = "#61b968";
-
-                    // スマホからのsuccessを受信したら、再度PCのsuccessを送信
-                    const connectMessage = JSON.stringify({ to: auth, id: "connect_pc", contents: "success" });
-                    ws.send(connectMessage);
-                    console.log('送信: ID=connect_pc, Contents=success');
-                }
-
-                // PCからのsuccessメッセージを受信した場合（デバッグ用）
-                if (data.id === "connect_pc" && data.contents === "success") {
-                    console.log("PCからのsuccessを受信");
-                }
-            } catch (e) {
-                console.error("受信データの解析エラー:", e);
-            }
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket切断');
-            document.getElementById('pc_status').innerText = "切断";
-            document.getElementById('pc_status_card').style.background = "#b96161";
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocketエラー:', error);
-            document.getElementById('pc_status').innerText = "エラー";
-            document.getElementById('pc_status_card').style.background = "#b96161";
-        };
-    </script>
+    <script src="../script/pc-connect.js"></script>
 </body>
 
 </html>

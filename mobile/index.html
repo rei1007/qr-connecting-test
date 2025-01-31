@@ -14,8 +14,8 @@
         <div class="card link_card">
             <label for="instance_input">リンクコード</label>
             <input type="text" autocapitalize="characters" id="instance_input">
-            <label for="password_input">リンクPIN</label>
-            <input type="number" id="password_input">
+            <label for="auth_input">リンクPIN</label>
+            <input type="number" id="auth_input">
             <button onclick="connectWebSocket()">接続</button>
         </div>
     
@@ -29,98 +29,7 @@
         </div>
     </div>
 
-    <script>
-        let ws; // WebSocketインスタンス
-        let pcConnected = false;
-        let phoneConnected = false;
-
-        function hashLoad() {
-            const hash = window.location.hash;
-            const hashContent = hash.substring(1);
-            const keyValuePairs = hashContent.split('&');
-            console.log(hash);
-
-            keyValuePairs.forEach(pair => {
-                const [key, value] = pair.split('=');
-                const decodedValue = decodeURIComponent(value);
-
-                if (key === 'code') {
-                    code = decodedValue;
-                    document.getElementById('instance_input').value = code;
-                    console.log(code);
-                } else if (key === 'pass') {
-                    pass = decodedValue;
-                    document.getElementById('password_input').value = pass;
-                    console.log(pass);
-                }
-            });
-
-            window.location.hash = '';
-        }
-        hashLoad();
-
-        function connectWebSocket() {
-            const instance = document.getElementById('instance_input').value.trim();
-            const url = `wss://cloud.achex.ca/${instance}`;
-            const auth = "qct_auth";
-            const password = document.getElementById('password_input').value.trim();
-
-            if (!auth || !password) {
-                alert("リンクコードとリンクPINを入力してください。");
-                return;
-            }
-
-            ws = new WebSocket(url);
-
-            ws.onopen = () => {
-                console.log('WebSocket接続成功');
-                document.getElementById('phone_status').innerText = "接続OK";
-                document.getElementById('phone_status_card').style.background = "#61b968";
-
-                // 認証情報を送信
-                const authData = JSON.stringify({ auth, password });
-                ws.send(authData);
-
-                // スマホ接続成功メッセージを送信
-                const connectMessage = JSON.stringify({ to: auth, id: "connect_phone", contents: "success" });
-                ws.send(connectMessage);
-                console.log('送信: ID=connect_phone, Contents=success');
-            };
-
-            ws.onmessage = (event) => {
-                console.log('受信:', event.data);
-                try {
-                    const data = JSON.parse(event.data);
-
-                    // PCからのsuccessメッセージを受信した場合
-                    if (data.id === "connect_pc" && data.contents === "success") {
-                        pcConnected = true;
-                        document.getElementById('pc_status').innerText = "接続OK";
-                        document.getElementById('pc_status_card').style.background = "#61b968";
-                    }
-
-                    // スマホからのsuccessメッセージを受信した場合（デバッグ用）
-                    if (data.id === "connect_phone" && data.contents === "success") {
-                        console.log("スマホからのsuccessを受信");
-                    }
-                } catch (e) {
-                    console.error("受信データの解析エラー:", e);
-                }
-            };
-
-            ws.onclose = () => {
-                console.log('WebSocket切断');
-                document.getElementById('phone_status').innerText = "切断";
-                document.getElementById('phone_status_card').style.background = "#b96161";
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocketエラー:', error);
-                document.getElementById('phone_status').innerText = "エラー";
-                document.getElementById('phone_status_card').style.background = "#b96161";
-            };
-        }
-    </script>
+    <script src="../script/mobile-connect.js"></script>
 </body>
 
 </html>
